@@ -1,0 +1,78 @@
+pann:
+1E-25
+Gamma:
+0
+Mdm:
+1
+DM_Channel:
+2.
+PBH_Model:
+2
+PBH_Spin:
+0.
+Mpbh:
+1E15
+fpbh:
+0.0
+hubble:
+0.6735837
+Tcmb:
+2.7255
+Omega_B:
+0.0494142797907188
+Omega_M:
+0.31242079216478097
+Omega_K:
+0.
+w0,wa:
+-1 0
+Nmnu
+1.
+mnu_1
+0.06
+mnu_2
+0.
+mnu_3
+0.
+YHe:
+0.245
+Neff:
+3.046
+fsR:
+1.
+meR:
+1.
+
+
+=====================================================================
+Input parameter file for Hyrec
+do NOT change param strings above (ends with :)
+default values are given as examples below.
+All parameters must be present 
+=====================================================================
+0.       = pann = <sigma v>/Mdm      dark matter annihilation parameter, in cm^3/s/GeV
+0.       = decay                     DM decay, in 1/s
+1.       = Mdm                       dark matter mass in GeV
+1.       = DM_Channel                Particle that DM decay/annihilate into, for full list see energy_injection.h
+1.       = Mpbh                      primordial black hole mass in solar masses
+0.       = fpbh                      fraction of dark matter made of PBHs 
+
+
+0.6766   = h                         H0/(100 km/s/Mpc)
+2.7255   = T0                        CMB temperature today, in K
+0.049    = Omega_b                   baryon density parameter
+0.3111   = Omega_cb                  matter (baryon + CDM) density parameter
+0.       = Omega_k                   curvature density parameter   -- Omega_Lambda is deduced from these
+-1, 0    = w0, wa                    dark energy equation of state parameters
+1.       = Nmnu                      number of massive neutrino
+0.06     = mnu1                      mass of the first neutrino    -- Massive ones should come first
+0.       = mnu2                      mass of the second neutrino
+0.       = mnu3                      mass of the third neutirno
+0.245    = Y_He                      Helium mass fraction 
+3.046    = Neff                      total effective  number of neutrinos (massive + massless)
+
+1.       = alpha(rec)/alpha(today)   ratio of fine structure constant at recombination to today's value
+                                     If it's not 1, a smaller timestep might be needed. Decrease timestep in history.h if needed.
+1.       = me(rec)/me(today)         ratio of electron mass at recombination to today's value
+
+

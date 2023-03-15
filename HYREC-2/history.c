@@ -136,15 +136,15 @@ void rec_build_history_camb_(const double *OmegaC, const double *OmegaB, const d
   /* It seems there are no parameters related to DM annihilation in CAMB
      So, following parameters (inj_params) are meaningless here          */
   rec_data.cosmo->inj_params->Mdm = 1.;
-  rec_data.cosmo->inj_params->decay = 0.;
+  rec_data.cosmo->inj_params->Gamma = 0.;
   rec_data.cosmo->inj_params->DM_Channel = 2.;
 
   /* Primodial black hole parameters */
   rec_data.cosmo->inj_params->PBH_Model = 1.;
   rec_data.cosmo->inj_params->PBH_Spin = 0.;
 
-  rec_data.cosmo->inj_params->Mpbh = 1.;
-  rec_data.cosmo->inj_params->fpbh = 0.;
+  rec_data.cosmo->inj_params->Mbh = 1.;
+  rec_data.cosmo->inj_params->fbh = 0.;
 
   rec_data.cosmo->inj_params->odmh2 = *OmegaC * h2;
 
@@ -247,10 +247,10 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
       fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'Param_Name'\n");
     exit(1);
   };
-  if (fscanf(fin, "%lg", &(param->inj_params->decay)) != 1)
+  if (fscanf(fin, "%lg", &(param->inj_params->Gamma)) != 1)
   {
     if (fout != NULL)
-      fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'decay'\n");
+      fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'Gamma'\n");
     exit(1);
   };
   if (fscanf(fin, "%s", Param_Name) != 1)
@@ -308,10 +308,10 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
       fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'Param_Name'\n");
     exit(1);
   };
-  if (fscanf(fin, "%lg", &(param->inj_params->Mpbh)) != 1)
+  if (fscanf(fin, "%lg", &(param->inj_params->Mbh)) != 1)
   {
     if (fout != NULL)
-      fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'Mpbh'\n");
+      fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'Mbh'\n");
     exit(1);
   };
 
@@ -321,10 +321,10 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
       fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'Param_Name'\n");
     exit(1);
   };
-  if (fscanf(fin, "%lg", &(param->inj_params->fpbh)) != 1)
+  if (fscanf(fin, "%lg", &(param->inj_params->fbh)) != 1)
   {
     if (fout != NULL)
-      fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'fpbh'\n");
+      fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'fbh'\n");
     exit(1);
   };
 
@@ -522,11 +522,11 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
   // Make sure all params are correctly passed
   /*
   printf("Pann = %E\n", param->inj_params->Pann);
-  printf("Gamma = %E\n", param->inj_params->decay);
+  printf("Gamma = %E\n", param->inj_params->Gamma);
   printf("Mdm = %f\n", param->inj_params->Mdm);
   printf("DM_Channel = %f\n", param->inj_params->DM_Channel);
-  printf("Mbh = %f\n", param->inj_params->Mpbh);
-  printf("fbh = %f\n", param->inj_params->fpbh);
+  printf("Mbh = %f\n", param->inj_params->Mbh);
+  printf("fbh = %f\n", param->inj_params->fbh);
   printf("h = %f\n", param->h);
   printf("T0 = %f\n", param->T0);
   printf("Omega_b = %f\n", Omega_b);

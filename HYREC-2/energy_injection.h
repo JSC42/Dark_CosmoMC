@@ -13,9 +13,9 @@ typedef struct
   double Mdm; // DM mass in GeV
   double Pann;  /* DM annihilation parameter in the smooth background and in haloes */
                 /* Units of Pann are cm^3/s/GeV */
-  double decay; // DM decay width in s^-1
-  double Mpbh; /* primordial black hole mass, if PBH_Model==1, Mbh is in solar mass, otherwise Mbh is in gram */
-  double fpbh; /* Fraction of DM made of primordial black holes */
+  double Gamma; // DM decay width in s^-1
+  double Mbh; /* primordial black hole mass, if PBH_Model==1, Mbh is in solar mass, otherwise Mbh is in gram */
+  double fbh; /* Fraction of DM made of primordial black holes */
  
   double PBH_Model; /* Chose PBH energy injection model
                     1 - Accretion

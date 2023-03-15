@@ -10,9 +10,9 @@ PBH_Model:
 2
 PBH_Spin:
 0.
-Mpbh:
+Mbh:
 1E15
-fpbh:
+fbh:
 0.0
 hubble:
 0.6735837
@@ -51,11 +51,11 @@ default values are given as examples below.
 All parameters must be present 
 =====================================================================
 0.       = Pann = <sigma v>/Mdm      dark matter annihilation parameter, in cm^3/s/GeV
-0.       = decay                     DM decay, in 1/s
+0.       = Gamma                     DM decay width, in 1/s
 1.       = Mdm                       dark matter mass in GeV
 1.       = DM_Channel                Particle that DM decay/annihilate into, for full list see energy_injection.h
-1.       = Mpbh                      primordial black hole mass in solar masses
-0.       = fpbh                      fraction of dark matter made of PBHs 
+1.       = Mbh                       primordial black hole mass in solar masses
+0.       = fbh                       fraction of dark matter made of PBHs 
 
 
 0.6766   = h                         H0/(100 km/s/Mpc)

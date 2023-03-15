@@ -48,7 +48,7 @@ void Validate_Inputs(INJ_PARAMS *params)
 double dEdVdt_decay_inj(double z, INJ_PARAMS *params)
 {
   double Gamma, Omch2, r;
-  Gamma = params->decay;
+  Gamma = params->Gamma;
   Omch2 = params->odmh2;
   if (Gamma > 0)
   {
@@ -75,7 +75,7 @@ double dEdVdt_Hawking_inj(double z, INJ_PARAMS *params)
   // Hawking Radiation injection, Normalised to mbh>10^17 g
   // See Eq (3.10) of arxiv 2108.13256
   double r;
-  r = (5.626976744186047e+29 / cube(params->Mpbh) * params->fpbh * params->odmh2 * cube(1. + z));
+  r = (5.626976744186047e+29 / cube(params->Mbh) * params->fbh * params->odmh2 * cube(1. + z));
   return r;
 }
 
@@ -95,7 +95,7 @@ double dEdVdt_Hawking_Mono_dep(double z, INJ_PARAMS *params, int dep_channel)
   // Hawking Radiation monochromatic deosition rate
   double inj, r, EFF, Mdm;
     inj = dEdVdt_Hawking_inj(z, params);
-    EFF = Interp_EFF_Hawking(params->Mpbh, z, params->PBH_Spin, params->PBH_Model, dep_channel);
+    EFF = Interp_EFF_Hawking(params->Mbh, z, params->PBH_Spin, params->PBH_Model, dep_channel);
     r = EFF * inj;
   return r;
 }
@@ -136,7 +136,7 @@ double dEdVdt_deposited(double z, INJ_PARAMS *params, int dep_channel)
     fprintf(stderr, "HeIon and Continnum dep channels not allowed, exitting\n");
     exit(1);
   }
-  if (params->decay < Nearly_Zero)
+  if (params->Gamma < Nearly_Zero)
   {
     r_dec = 0.0;
   }
@@ -152,7 +152,7 @@ double dEdVdt_deposited(double z, INJ_PARAMS *params, int dep_channel)
   {
     r_ann = dEdVdt_ann_dep(z, params, dep_channel);
   }
-  if (params->fpbh < Nearly_Zero)
+  if (params->fbh < Nearly_Zero)
   {
     r_Hawking = 0.0;
   }

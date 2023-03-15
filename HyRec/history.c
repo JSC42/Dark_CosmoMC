@@ -15,7 +15,9 @@
 /*                             and improved numerical radiative transfer equations                    */
 /*                             so the Lyman-lines spectrum can be extracted                           */
 /*                           - split some functions for more clarity                                  */
-/*             - October 2012: added some wrapper functions for running CAMB with HyRec               */
+/*            - October 2012: added some wrapper functions for running CAMB with HyRec                */
+/*            - March 2023: added module for DM&PBH energy injection as HYREC-2 doen not seem to work */
+/*                            with camb                                                               */
 /*                             (courtesy of Antony Lewis)                                             */
 /******************************************************************************************************/
 
@@ -29,6 +31,195 @@
 #include "hydrogen.h"
 #include "history.h"
 
+/* Dark Matter Energy injection module */
+// Rho_cr * c^2 /h^2, in eV/cm^3
+#define Rhocr_C2_no_h2 1.054041699E4
+#include "DarkSide/DarkSide.h"
+#define Nearly_Zero 1.0E-50
+#define Zmax_Energy_Injection 2000
+#define debug_mode 0
+
+void Validate_Inputs(REC_COSMOPARAMS *params)
+{
+    /* Check input params
+    1. Particle Channel
+    2. PBH Spin
+    3. PBH Model: Currently only support [1 2 3]
+    */
+    int Particle_Channel, PBH_Model;
+    Particle_Channel = Convert_to_Int(params->DM_Channel);
+    PBH_Model = Convert_to_Int(params->PBH_Model);
+    if ((Particle_Channel < 1) || (Particle_Channel > 12))
+    {
+        printf("Error from Validate_Inputs@HyRec: Unknown particle channel selected\n");
+        exit(1);
+    }
+    if ((params->PBH_Spin > 0.99999) || (params->PBH_Spin < -1.0E-5))
+    {
+        printf("Error from Validate_Inputs@HyRec: wrong PBH_Spin.\n");
+        exit(1);
+    }
+    if ((PBH_Model < 1) || (PBH_Model > 3))
+    {
+        printf("Error from Validate_Inputs@HyRec: Wrong choice of PBH_Model\n");
+        exit(1);
+    }
+}
+
+// ALL dEdVdt are in ev/cm^3/s unit
+double dEdVdt_decay_inj(double z, REC_COSMOPARAMS *params)
+{
+    double Gamma, Omch2, r;
+    Gamma = params->Gamma;
+    Omch2 = params->odmh2;
+    if (Gamma > 0)
+    {
+        r = Gamma * Omch2 * pow(1 + z, 3.0) * Rhocr_C2_no_h2;
+    }
+    else
+    {
+        r = 0.0;
+    }
+    return r;
+}
+
+double dEdVdt_ann_inj(double z, REC_COSMOPARAMS *params)
+{
+    double Omch2, r;
+    Omch2 = params->odmh2;
+    // 1E9 converts GeV to eV
+    r = params->Pann * square(Rhocr_C2_no_h2 * Omch2 * cube(1. + z)) * 1.0E-9;
+    return r;
+}
+
+double dEdVdt_Hawking_inj(double z, REC_COSMOPARAMS *params)
+{
+    // Hawking Radiation injection, Normalised to mbh>10^17 g
+    // See Eq (3.10) of arxiv 2108.13256
+    double r;
+    r = (5.626976744186047e+29 / cube(params->Mbh) * params->fbh * params->odmh2 * cube(1. + z));
+    return r;
+}
+
+double dEdVdt_decay_dep(double z, REC_COSMOPARAMS *params, int dep_channel)
+{
+    double inj, r, EFF, Mdm;
+    int DM_Channel;
+    DM_Channel = Convert_to_Int(params->DM_Channel);
+    inj = dEdVdt_decay_inj(z, params);
+    EFF = Interp_EFF_DM_Decay(params->Mdm, z, dep_channel, DM_Channel);
+    r = EFF * inj;
+    return r;
+}
+
+double dEdVdt_Hawking_Mono_dep(double z, REC_COSMOPARAMS *params, int dep_channel)
+{
+    // Hawking Radiation monochromatic deosition rate
+    double inj, r, EFF, Mdm;
+    inj = dEdVdt_Hawking_inj(z, params);
+    EFF = Interp_EFF_Hawking(params->Mbh, z, params->PBH_Spin, params->PBH_Model, dep_channel);
+    r = EFF * inj;
+    return r;
+}
+
+double dEdVdt_Hawking_dep(double z, REC_COSMOPARAMS *params, int dep_channel)
+{
+    // Hawking Radiation for general mass distributions
+    // Currently only allow monochromatic, more on the way
+    return dEdVdt_Hawking_Mono_dep(z, params, dep_channel);
+}
+
+double dEdVdt_ann_dep(double z, REC_COSMOPARAMS *params, int dep_channel)
+{
+    double inj, r, EFF, Mdm;
+    int DM_Channel;
+    DM_Channel = (int)round(params->DM_Channel);
+    inj = dEdVdt_ann_inj(z, params);
+    EFF = Interp_EFF_DM_Annihilation(params->Mdm, z, dep_channel, DM_Channel);
+    // printf("EFF = %E\n",EFF);
+    r = EFF * inj;
+    return r;
+}
+
+double dEdVdt_deposited(double z, REC_COSMOPARAMS *params, int dep_channel)
+{
+    /* Energy Deposition Rate in ev/cm^3/s
+     -- inputs --
+     dep_channel = 1: HIon
+                   3: LyA
+                   4: Heating
+    */
+
+    double r_dec, r_ann, r_Hawking, r;
+
+    // Check params
+    if ((dep_channel == 2) || (dep_channel == 5))
+    {
+        fprintf(stderr, "HeIon and Continnum dep channels not allowed, exitting\n");
+        exit(1);
+    }
+    if (params->Gamma < Nearly_Zero)
+    {
+        r_dec = 0.0;
+    }
+    else
+    {
+        r_dec = dEdVdt_decay_dep(z, params, dep_channel);
+    }
+    if (params->Pann < Nearly_Zero)
+    {
+        r_ann = 0.0;
+    }
+    else
+    {
+        r_ann = dEdVdt_ann_dep(z, params, dep_channel);
+    }
+    if (params->fbh < Nearly_Zero)
+    {
+        r_Hawking = 0.0;
+    }
+    else
+    {
+        r_Hawking = dEdVdt_Hawking_dep(z, params, dep_channel);
+    }
+
+    r = r_dec + r_ann + r_Hawking;
+    if (z > Zmax_Energy_Injection)
+    {
+        r = 0.0;
+    }
+    return r;
+}
+
+// double dEdVdt_deposited(double z, REC_COSMOPARAMS *params, int dep_channel)
+void Update_DarkArray(double z, REC_COSMOPARAMS *params, double *DarkArray)
+{
+    double dEdVdt_HIon, dEdVdt_LyA, dEdVdt_Heat;
+    dEdVdt_HIon = dEdVdt_deposited(z, params, 1);
+    dEdVdt_LyA = dEdVdt_deposited(z, params, 3);
+    dEdVdt_Heat = dEdVdt_deposited(z, params, 4);
+    // Let's fill dEdVdt first and see what we can do with it
+    DarkArray[0] = dEdVdt_HIon;
+    DarkArray[1] = dEdVdt_LyA;
+    DarkArray[2] = dEdVdt_Heat;
+    // printf("%E  %E  %E\n", DarkArray[0], DarkArray[1], DarkArray[2]);
+}
+
+void Check_Error(double xe, double T)
+{
+    // Check for inifnity and NaN in Xe and T
+    if (isfinite(xe) == 0)
+    {
+        printf("Error from Check_Error@HyRec: xe is NaN or infinite\n");
+        exit(1);
+    }
+    if (isfinite(T) == 0)
+    {
+        printf("Error from Check_Error@HyRec: T is NaN or infinite\n");
+        exit(1);
+    }
+}
+
 /*****************************************************************************
 Setting derived cosmological parameters needed for recombination calculation
 ******************************************************************************/
@@ -40,7 +231,8 @@ void rec_set_derived_params(REC_COSMOPARAMS *param)
     double z, Pion, Tresc, RLya, four_betaB;
 
     param->nH0 = 11.223846333047 * param->obh2 * (1. - param->Y); /* number density of hydrogen today in m-3 */
-    param->fHe = param->Y / (1 - param->Y) / 3.97153;             /* abundance of helium by number */
+    param->odmh2 = param->omh2 - param->obh2;
+    param->fHe = param->Y / (1 - param->Y) / 3.97153; /* abundance of helium by number */
     /* these should depend on fsR and meR, strictly speaking; however, these are corrections to corrections */
 
     /* Total number of redshift steps */
@@ -131,8 +323,9 @@ void rec_build_history_camb_(const double *OmegaC, const double *OmegaB, const d
     param.Y = *yp;
     param.Nnueff = *num_nu;
     param.fsR = param.meR = 1.; /*** Default: today's values ***/
-    
+
     // Set default camb params for DM&PBH
+    param.odmh2 = param.omh2 - param.obh2;
     param.Mdm = 1.0;
     param.Pann = 0.;
     param.Gamma = 0.;
@@ -246,7 +439,7 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
     fscanf(fin, "%lg", &(param->Y));
     fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->Nnueff));
-   // DM&PBH params
+    // DM&PBH params
     fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->Mdm));
     fscanf(fin, "%s", Param_Name);
@@ -263,7 +456,7 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
     fscanf(fin, "%lg", &(param->PBH_Spin));
     fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->DM_Channel));
-    
+
     /*
     printf("Tcmb = %f\n", param->T0);
     printf("obh2 = %f\n", param->obh2);
@@ -280,7 +473,7 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
     /** fsR = alpha_fs(rec) / alpha_fs(today), meR = me(rec) / me(today) **/
 
     param->fsR = param->meR = 1.0; /*** Default: today's values ***/
-    
+
     /**** UNCOMMENT IF WANT TO USE DIFFERENT VALUES OF alpha_fs OR me *****/
 
     /* if (fout!=NULL && PROMPT==1) fprintf(fout, "Enter ratio of fine structure constant at last scattering to today's value, alpha(rec)/alpha(now): "); */
@@ -299,9 +492,13 @@ Matter temperature -- 1st order steady state, from Hirata 2008.
 The input and output temperatures are in KELVIN.
 ******************************************************************************************/
 
-double rec_Tmss(double xe, double Tr, double H, double fHe, double fsR, double meR, REC_COSMOPARAMS *param)
+double rec_Tmss(double xe, double Tr, double H, double fHe, double fsR, double meR, double *DarkArray)
 {
-    return (Tr / (1. + H / (fsR * fsR / meR / meR / meR * 4.91466895548409e-22) / Tr / Tr / Tr / Tr * (1. + xe + fHe) / xe));
+    double coeff_inv = H / (fsR * fsR / cube(meR) * 4.91466895548409e-22) / pow(Tr, 4.0) * (1. + xe + fHe) / xe;
+
+    // return Tr / (1. + H / (fsR * fsR / cube(meR) * 4.91466895548409e-22) / pow(Tr, 4.0) * (1. + xe + fHe) / xe);
+    return Tr / (1. + coeff_inv);
+
     /* Coefficient = 8 sigma_T a_r / (3 m_e c) */
     /* Here Tr, Tm are the actual (not rescaled) temperatures */
 }
@@ -311,7 +508,7 @@ Matter temperature evolution derivative. Input and output temperatures are in KE
 Added May 2012: when Tm = Tr, return -Tr (needed by CLASS)
 ******************************************************************************************/
 
-double rec_dTmdlna(double xe, double Tm, double Tr, double H, double fHe, double fsR, double meR, REC_COSMOPARAMS *param)
+double rec_dTmdlna(double xe, double Tm, double Tr, double H, double fHe, double fsR, double meR, double *DarkArray)
 {
     double Q_adia, Q_compt, Q_dm, z;
     Q_adia = -2. * Tm;
@@ -378,7 +575,7 @@ iz_out is the index corresponding to z_out.
 
 double rec_xH1s_postSaha(REC_COSMOPARAMS *param, unsigned iz_out, double z_out, double xHeII_out,
                          HRATEEFF *rate_table, TWO_PHOTON_PARAMS *twog_params,
-                         double **Dfminus_hist, double *Dfminus_Ly_hist[], double **Dfnu_hist, int *post_saha)
+                         double **Dfminus_hist, double *Dfminus_Ly_hist[], double **Dfnu_hist, int *post_saha, double *DarkArray)
 {
 
     double ainv, xH1sSaha, xHIISaha, dxH1sSaha_dlna, dxH1sdlna_Saha, DdxH1sdlna_DxH1s, H, T, nH, Dxe, xH1s;
@@ -398,12 +595,12 @@ double rec_xH1s_postSaha(REC_COSMOPARAMS *param, unsigned iz_out, double z_out, 
         /* (partial xHII)/(partial xHeII).dxHeII/dlna */
     }
     dxH1sdlna_Saha = -rec_dxHIIdlna(MODEL, xHIISaha + xHeII_out, xHIISaha, nH, H, T, T, rate_table, twog_params,
-                                    Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz_out - param->izH0, z_out, param->fsR, param->meR);
+                                    Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz_out - param->izH0, z_out, param->fsR, param->meR, DarkArray);
     Dxe = 0.01 * xH1sSaha;
     DdxH1sdlna_DxH1s = (rec_dxHIIdlna(MODEL, xHIISaha + Dxe + xHeII_out, xHIISaha + Dxe, nH, H, T, T, rate_table, twog_params,
-                                      Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz_out - param->izH0, z_out, param->fsR, param->meR) -
+                                      Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz_out - param->izH0, z_out, param->fsR, param->meR, DarkArray) -
                         rec_dxHIIdlna(MODEL, xHIISaha - Dxe + xHeII_out, xHIISaha - Dxe, nH, H, T, T, rate_table, twog_params,
-                                      Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz_out - param->izH0, z_out, param->fsR, param->meR)) /
+                                      Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz_out - param->izH0, z_out, param->fsR, param->meR, DarkArray)) /
                        2. / Dxe;
 
     xH1s = xH1sSaha + (dxH1sSaha_dlna - dxH1sdlna_Saha) / DdxH1sdlna_DxH1s;
@@ -424,7 +621,7 @@ there is almost no HeII left, then integrate H only)
 
 void get_rec_next2_HHe(REC_COSMOPARAMS *param, unsigned iz_in, double z_in, double Tm_in, double *xH1s, double *xHeII,
                        HRATEEFF *rate_table, TWO_PHOTON_PARAMS *twog_params, double **Dfminus_hist, double *Dfminus_Ly_hist[], double **Dfnu_hist,
-                       double *dxHIIdlna_prev, double *dxHeIIdlna_prev, double *dxHIIdlna_prev2, double *dxHeIIdlna_prev2, int *post_saha)
+                       double *dxHIIdlna_prev, double *dxHeIIdlna_prev, double *dxHIIdlna_prev2, double *dxHeIIdlna_prev2, int *post_saha, double *DarkArray)
 {
 
     double H, dxHeIIdlna, dxHIIdlna, TR, TM, nH, zout, ainv, xH1s_in, xHeII_in, xe_in;
@@ -443,14 +640,14 @@ void get_rec_next2_HHe(REC_COSMOPARAMS *param, unsigned iz_in, double z_in, doub
     TM = kBoltz * Tm_in;
     nH = 1e-6 * param->nH0 * ainv * ainv * ainv;
     dxHIIdlna = rec_dxHIIdlna(MODEL, xe_in, (1. - xH1s_in), nH, H, TM, TR, rate_table, twog_params,
-                              Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz_in - param->izH0, z_in, param->fsR, param->meR);
+                              Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz_in - param->izH0, z_in, param->fsR, param->meR, DarkArray);
 
     /* If Hydrogen is still close to Saha equilibrium do a post-Saha expansion for Hydrogen */
     if (*post_saha == 1)
     {
         zout = (1. + z_in) * exp(-DLNA) - 1.; /* Redshift for the output */
         *xH1s = rec_xH1s_postSaha(param, iz_in + 1, zout, *xHeII, rate_table, twog_params,
-                                  Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, post_saha);
+                                  Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, post_saha, DarkArray);
     }
 
     /* Otherwise solve HII ODE */
@@ -472,7 +669,7 @@ Tm is given as an input (to avoid computing it twice) and fixed to quasi-equilib
 void rec_get_xe_next1_H(REC_COSMOPARAMS *param, double z_in, double xe_in, double Tm_in, double *xe_out,
                         HRATEEFF *rate_table, unsigned iz, TWO_PHOTON_PARAMS *twog_params,
                         double **Dfminus_hist, double *Dfminus_Ly_hist[], double **Dfnu_hist,
-                        double *dxedlna_prev, double *dxedlna_prev2, int *post_saha)
+                        double *dxedlna_prev, double *dxedlna_prev2, int *post_saha, double *DarkArray)
 {
 
     double dxedlna, TR, nH, ainv, H, TM, zout;
@@ -487,14 +684,14 @@ void rec_get_xe_next1_H(REC_COSMOPARAMS *param, double z_in, double xe_in, doubl
     model = (iz - param->izH0 < param->nzrt || MODEL != FULL) ? MODEL : EMLA2s2p;
 
     dxedlna = rec_dxHIIdlna(model, xe_in, xe_in, nH, H, TM, TR, rate_table, twog_params,
-                            Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz - param->izH0, z_in, param->fsR, param->meR);
+                            Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz - param->izH0, z_in, param->fsR, param->meR, DarkArray);
 
     /* If close to Saha equilibrium (with xHeII = 0), do a post-Saha expansion */
     if (*post_saha == 1)
     {
         zout = (1. + z_in) * exp(-DLNA) - 1.; /* Redshift for the output */
         *xe_out = 1. - rec_xH1s_postSaha(param, iz + 1, zout, 0., rate_table, twog_params,
-                                         Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, post_saha);
+                                         Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, post_saha, DarkArray);
     }
 
     /* Otherwise evolve ODE */
@@ -514,7 +711,7 @@ May 2012: added a switch so Peebles model can be used at low redshift.
 
 void rec_get_xe_next2_HTm(int func_select, REC_COSMOPARAMS *param, double z_in, double xe_in, double Tm_in, double *xe_out, double *Tm_out,
                           HRATEEFF *rate_table, unsigned iz, TWO_PHOTON_PARAMS *twog_params, double **Dfminus_hist, double *Dfminus_Ly_hist[],
-                          double **Dfnu_hist, double *dxedlna_prev, double *dTmdlna_prev, double *dxedlna_prev2, double *dTmdlna_prev2)
+                          double **Dfnu_hist, double *dxedlna_prev, double *dTmdlna_prev, double *dxedlna_prev2, double *dTmdlna_prev2, double *DarkArray)
 {
 
     double dxedlna, dTmdlna, TR, nH, ainv, H, TM;
@@ -529,9 +726,9 @@ void rec_get_xe_next2_HTm(int func_select, REC_COSMOPARAMS *param, double z_in, 
     model = (iz - param->izH0 < param->nzrt || func_select != FULL) ? func_select : EMLA2s2p;
 
     dxedlna = rec_dxHIIdlna(model, xe_in, xe_in, nH, H, TM, TR, rate_table, twog_params,
-                            Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz - param->izH0, z_in, param->fsR, param->meR);
+                            Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz - param->izH0, z_in, param->fsR, param->meR, DarkArray);
 
-    dTmdlna = rec_dTmdlna(xe_in, Tm_in, TR / kBoltz, H, param->fHe, param->fsR, param->meR, param);
+    dTmdlna = rec_dTmdlna(xe_in, Tm_in, TR / kBoltz, H, param->fHe, param->fsR, param->meR, DarkArray);
 
     *xe_out = xe_in + DLNA * (1.25 * dxedlna - 0.25 * (*dxedlna_prev2));
     *Tm_out = Tm_in + DLNA * (1.25 * dTmdlna - 0.25 * (*dTmdlna_prev2));
@@ -557,6 +754,10 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
     double Delta_xe, xHeII, xH1s;
     double **Dfminus_hist;
     int post_saha;
+    // Dark Matter related quantities, MUST be of the form:
+    // DarkArray = [dEdVdt_HIon, dEdVdt_LyA, dEdVdt_Heat, .... ]
+
+    double DarkArray[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
     Dfminus_hist = create_2D_array(NVIRT, param->nzrt);
 
@@ -571,9 +772,14 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
 
     for (iz = 0; iz < param->nz && Delta_xe > 1e-8; iz++)
     {
+        Update_DarkArray(z, param, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         xe_output[iz] = rec_xesaha_HeII_III(param->nH0, param->T0, param->fHe, z, &Delta_xe, param->fsR, param->meR);
         Tm_output[iz] = param->T0 * (1. + z);
+        if (debug_mode)
+        {
+            printf("Stage_1: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
+        }
     }
 
     /******** He II -> I recombination.
@@ -592,11 +798,16 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
 
     for (; iz < param->izH0 + 1; iz++)
     {
+        Update_DarkArray(z, param, DarkArray);
         rec_get_xe_next1_He(param, z, &xHeII, &dxHeIIdlna_prev, &dxHeIIdlna_prev2, &post_saha);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         xH1s = rec_saha_xH1s(xHeII, param->nH0, param->T0, z, param->fsR, param->meR);
         xe_output[iz] = (1. - xH1s) + xHeII;
-        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, param);
+        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
+        if (debug_mode)
+        {
+            printf("Stage_2: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
+        }
     }
 
     /******** H II -> I and He II -> I simultaneous recombination (rarely needed but just in case)
@@ -611,11 +822,16 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
 
     for (; iz < param->nz && xHeII > XHEII_MIN; iz++)
     {
+        Update_DarkArray(z, param, DarkArray);
         get_rec_next2_HHe(param, iz - 1, z, Tm_output[iz - 1], &xH1s, &xHeII, rate_table, twog_params, Dfminus_hist, Dfminus_Ly_hist,
-                          Dfnu_hist, &dxHIIdlna_prev, &dxHeIIdlna_prev, &dxHIIdlna_prev2, &dxHeIIdlna_prev2, &post_saha);
+                          Dfnu_hist, &dxHIIdlna_prev, &dxHeIIdlna_prev, &dxHIIdlna_prev2, &dxHeIIdlna_prev2, &post_saha, DarkArray);
         xe_output[iz] = (1. - xH1s) + xHeII;
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
-        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, param);
+        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
+        if (debug_mode)
+        {
+            printf("Stage_3: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
+        }
     }
 
     /******** H recombination. Helium assumed entirely neutral.
@@ -624,10 +840,15 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
 
     for (; iz < param->nz && 1. - Tm_output[iz - 1] / param->T0 / (1. + z) < DLNT_MAX; iz++)
     {
+        Update_DarkArray(z, param, DarkArray);
         rec_get_xe_next1_H(param, z, xe_output[iz - 1], Tm_output[iz - 1], xe_output + iz, rate_table, iz - 1, twog_params,
-                           Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, &dxHIIdlna_prev, &dxHIIdlna_prev2, &post_saha);
+                           Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, &dxHIIdlna_prev, &dxHIIdlna_prev2, &post_saha, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
-        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, param);
+        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
+        if (debug_mode)
+        {
+            printf("Stage_4: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
+        }
     }
 
     /******** Evolve xe and Tm simultaneously until the lower bounds of integration tables are reached.
@@ -640,10 +861,15 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
 
     for (; iz < param->nz && kBoltz * param->T0 * (1. + z) / param->fsR / param->fsR / param->meR > TR_MIN && Tm_output[iz - 1] / param->T0 / (1. + z) > TM_TR_MIN; iz++)
     {
+        Update_DarkArray(z, param, DarkArray);
         rec_get_xe_next2_HTm(MODEL, param, z, xe_output[iz - 1], Tm_output[iz - 1], xe_output + iz, Tm_output + iz,
                              rate_table, iz - 1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist,
-                             &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2);
+                             &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
+        if (debug_mode)
+        {
+            printf("Stage_5: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
+        }
     }
 
     /***** For low redshifts (z < 20 or so) use Peeble's model (Tm is evolved with xe).
@@ -654,10 +880,15 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
 
     for (; iz < param->nz; iz++)
     {
+        Update_DarkArray(z, param, DarkArray);
         rec_get_xe_next2_HTm(PEEBLES, param, z, xe_output[iz - 1], Tm_output[iz - 1], xe_output + iz, Tm_output + iz,
                              rate_table, iz - 1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist,
-                             &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2);
+                             &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
+        if (debug_mode)
+        {
+            printf("Stage_6: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
+        }
     }
 
     /* Cleanup */

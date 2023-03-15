@@ -16,3 +16,26 @@ Neff
 3.04
 Mdm
 1.
+Pann
+0
+Gamma
+1E-25
+Mbh
+1.0E14
+fbh
+0
+PBH_Model
+2
+PBH_Spin
+0
+DM_Channel
+1
+
+// jsc note for adding DM
+ionisation functions:
+
+rec_TLA_dxHIIdlna
+rec_HMLA_dxHIIdlna
+
+if you want you can also change :
+populateTS_2photon

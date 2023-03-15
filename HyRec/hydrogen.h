@@ -118,4 +118,4 @@ double rec_HMLA_2photon_dxedlna(double xe, double nH, double H, double TM, doubl
                                 double zstart, unsigned iz, double z, double fsR, double meR);
 double rec_dxHIIdlna(int model, double xe, double xHII, double nH, double H, double TM, double TR,
                      HRATEEFF *rate_table, TWO_PHOTON_PARAMS *twog, double **Dfminus_hist, double *Dfminus_Ly_hist[],
-                     double **Dfnu_hist, double zstart, unsigned iz, double z, double fsR, double meR);
+                     double **Dfnu_hist, double zstart, unsigned iz, double z, double fsR, double meR, double *DarkArray);

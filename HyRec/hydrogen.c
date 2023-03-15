@@ -84,7 +84,7 @@ Changes (May 2012):
 ***************************************************************************************************/
 
 double rec_TLA_dxHIIdlna(double xe, double xHII, double nH, double H, double TM, double TR, double Fudge,
-                         double fsR, double meR)
+                         double fsR, double meR, double *DarkArray)
 {
 
    double RLya, alphaB_TM, alphaB_TR, four_betaB, C, s, Dxe2, DalphaB;
@@ -238,7 +238,7 @@ Changes May 2012:
 ************************************************************************************************/
 
 double rec_HMLA_dxHIIdlna(double xe, double xHII, double nH, double H, double TM, double TR,
-                          HRATEEFF *rate_table, double fsR, double meR)
+                          HRATEEFF *rate_table, double fsR, double meR, double *DarkArray)
 {
 
    double Alpha[2], DAlpha[2], Beta[2], R2p2s, RLya;
@@ -855,18 +855,22 @@ use full radiative transfer equations, otherwise just use the simple EMLA.
 
 double rec_dxHIIdlna(int model, double xe, double xHII, double nH, double H, double TM, double TR,
                      HRATEEFF *rate_table, TWO_PHOTON_PARAMS *twog, double **Dfminus_hist, double *Dfminus_Ly_hist[],
-                     double **Dfnu_hist, double zstart, unsigned iz, double z, double fsR, double meR)
+                     double **Dfnu_hist, double zstart, unsigned iz, double z, double fsR, double meR, double *DarkArray)
 {
 
    if (model == PEEBLES)
-      return rec_TLA_dxHIIdlna(xe, xHII, nH, H, TM, TR, 1.00, fsR, meR);
+      return rec_TLA_dxHIIdlna(xe, xHII, nH, H, TM, TR, 1.00, fsR, meR, DarkArray);
    else if (model == RECFAST)
-      return rec_TLA_dxHIIdlna(xe, xHII, nH, H, TM, TR, 1.14, fsR, meR);
+      return rec_TLA_dxHIIdlna(xe, xHII, nH, H, TM, TR, 1.14, fsR, meR, DarkArray);
    else if (model == EMLA2s2p)
-      return rec_HMLA_dxHIIdlna(xe, xHII, nH, H, TM, TR, rate_table, fsR, meR);
+      return rec_HMLA_dxHIIdlna(xe, xHII, nH, H, TM, TR, rate_table, fsR, meR, DarkArray);
    else if (model == FULL)
+   {
+      printf("Error: DM injection is currently not compatible with FULL model.\n");
+      exit(1);
       return rec_HMLA_2photon_dxHIIdlna(xe, xHII, nH, H, TM, TR, rate_table, twog, Dfminus_hist,
                                         Dfminus_Ly_hist, Dfnu_hist, zstart, iz, z, fsR, meR);
+   }
    else
    {
       fprintf(stderr, "Error in rec_dxedlna: model = %i is undefined.\n", model);

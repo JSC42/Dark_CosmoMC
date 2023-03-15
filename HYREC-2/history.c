@@ -567,7 +567,7 @@ double rec_Tmss(double z, double xe, REC_COSMOPARAMS *cosmo, double dEdtdV_Heat,
 
   /* Coefficient = 8 sigma_T a_r / (3 m_e c) */
   /* Here Tr, Tm are the actual (not rescaled) temperatures */
-  double coeff = fsR * fsR / meR / meR / meR * 4.91466895548409e-22 * Tr * Tr * Tr * Tr * xe / (1. + xe + cosmo->fHe) / H;
+  double coeff = fsR * fsR / cube(meR) * 4.91466895548409e-22 * pow(Tr,4.0) * xe / (1. + xe + cosmo->fHe) / H;
   double Tm = Tr / (1. + 1. / coeff) + dEdtdV_Heat / kBoltz / (1.5 * nH * (1. + xe + cosmo->fHe)) / H / (1. + coeff);
   return Tm;
 }

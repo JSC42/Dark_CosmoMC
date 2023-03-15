@@ -194,7 +194,7 @@ double dEdVdt_deposited(double z, REC_COSMOPARAMS *params, int dep_channel)
 // double dEdVdt_deposited(double z, REC_COSMOPARAMS *params, int dep_channel)
 void Update_DarkArray(double z, REC_COSMOPARAMS *params, double *DarkArray)
 {
-    double dEdVdt_HIon, dEdVdt_LyA, dEdVdt_Heat;
+    double dEdVdt_HIon, dEdVdt_LyA, dEdVdt_Heat, nH;
     dEdVdt_HIon = dEdVdt_deposited(z, params, 1);
     dEdVdt_LyA = dEdVdt_deposited(z, params, 3);
     dEdVdt_Heat = dEdVdt_deposited(z, params, 4);
@@ -202,6 +202,9 @@ void Update_DarkArray(double z, REC_COSMOPARAMS *params, double *DarkArray)
     DarkArray[0] = dEdVdt_HIon;
     DarkArray[1] = dEdVdt_LyA;
     DarkArray[2] = dEdVdt_Heat;
+    // H number density in cm^3
+    nH = params->nH0*cube(1+z)*1.E-6;
+    DarkArray[3] = nH;
     // printf("%E  %E  %E\n", DarkArray[0], DarkArray[1], DarkArray[2]);
 }
 
@@ -494,10 +497,15 @@ The input and output temperatures are in KELVIN.
 
 double rec_Tmss(double xe, double Tr, double H, double fHe, double fsR, double meR, double *DarkArray)
 {
-    double coeff_inv = H / (fsR * fsR / cube(meR) * 4.91466895548409e-22) / pow(Tr, 4.0) * (1. + xe + fHe) / xe;
+    double coeff_inv, nH, dEdVdt_Heat, DM_Term, coeff;
+    dEdVdt_Heat = DarkArray[2];
+    nH = DarkArray[3];
+    coeff_inv = H / (fsR * fsR / cube(meR) * 4.91466895548409e-22) / pow(Tr, 4.0) * (1. + xe + fHe) / xe;
+    coeff = 1.0/coeff_inv;
+    DM_Term = dEdVdt_Heat / kBoltz / (1.5 * nH * (1. + xe + fHe)) / H / (1. + coeff);
 
     // return Tr / (1. + H / (fsR * fsR / cube(meR) * 4.91466895548409e-22) / pow(Tr, 4.0) * (1. + xe + fHe) / xe);
-    return Tr / (1. + coeff_inv);
+    return Tr / (1. + coeff_inv) + DM_Term;
 
     /* Coefficient = 8 sigma_T a_r / (3 m_e c) */
     /* Here Tr, Tm are the actual (not rescaled) temperatures */
@@ -506,15 +514,21 @@ double rec_Tmss(double xe, double Tr, double H, double fHe, double fsR, double m
 /******************************************************************************************
 Matter temperature evolution derivative. Input and output temperatures are in KELVIN.
 Added May 2012: when Tm = Tr, return -Tr (needed by CLASS)
+Modified by JSC: allow Tm > Tr
 ******************************************************************************************/
 
 double rec_dTmdlna(double xe, double Tm, double Tr, double H, double fHe, double fsR, double meR, double *DarkArray)
 {
-    double Q_adia, Q_compt, Q_dm, z;
+    double Q_adia, Q_compt, Q_dm, z, nH, dEdVdt_Heat;
     Q_adia = -2. * Tm;
     Q_compt = fsR * fsR / meR / meR / meR * 4.91466895548409e-22 * Tr * Tr * Tr * Tr * xe / (1. + xe + fHe) * (Tr - Tm) / H;
-    return (Tr / Tm - 1. < 1e-10 ? -Tr : Q_adia + Q_compt);
-    /* Coefficient = 8 sigma_T a_r / (3 m_e c) */
+    
+    dEdVdt_Heat = DarkArray[2];
+    nH = DarkArray[3];
+    Q_dm = dEdVdt_Heat / kBoltz / (1.5 * nH * (1. + xe + fHe)) / H;
+    
+    // return (Tr / Tm - 1. < 1e-10 ? -Tr : Q_adia + Q_compt + Q_dm);
+    return  Q_adia + Q_compt + Q_dm;
     /* Here Tr, Tm are the actual (not rescaled) temperatures */
 }
 
@@ -776,6 +790,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         xe_output[iz] = rec_xesaha_HeII_III(param->nH0, param->T0, param->fHe, z, &Delta_xe, param->fsR, param->meR);
         Tm_output[iz] = param->T0 * (1. + z);
+        Check_Error(xe_output[iz], Tm_output[iz]);
         if (debug_mode)
         {
             printf("Stage_1: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -804,6 +819,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         xH1s = rec_saha_xH1s(xHeII, param->nH0, param->T0, z, param->fsR, param->meR);
         xe_output[iz] = (1. - xH1s) + xHeII;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
+        Check_Error(xe_output[iz], Tm_output[iz]);
         if (debug_mode)
         {
             printf("Stage_2: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -828,6 +844,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         xe_output[iz] = (1. - xH1s) + xHeII;
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
+        Check_Error(xe_output[iz], Tm_output[iz]);
         if (debug_mode)
         {
             printf("Stage_3: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -845,6 +862,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
                            Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, &dxHIIdlna_prev, &dxHIIdlna_prev2, &post_saha, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
+        Check_Error(xe_output[iz], Tm_output[iz]);
         if (debug_mode)
         {
             printf("Stage_4: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -866,6 +884,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
                              rate_table, iz - 1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist,
                              &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
+        Check_Error(xe_output[iz], Tm_output[iz]);
         if (debug_mode)
         {
             printf("Stage_5: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -885,6 +904,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
                              rate_table, iz - 1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist,
                              &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
+        Check_Error(xe_output[iz], Tm_output[iz]);
         if (debug_mode)
         {
             printf("Stage_6: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);

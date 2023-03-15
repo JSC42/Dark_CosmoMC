@@ -79,7 +79,7 @@ int main(void)
       z = ZSTART + dz * iz; /* print output every dz */
       xe = rec_interp1d(-log(1. + ZSTART), DLNA, xe_output, param.nz, -log(1. + z));
       Tm = rec_interp1d(-log(1. + ZSTART), DLNA, Tm_output, param.nz, -log(1. + z));
-      // printf("%7.2lf %15.15lf %15.13lf\n", z, xe, Tm / param.T0 / (1. + z)); //jsc
+      printf("%7.2lf %15.15lf %15.13lf\n", z, xe, Tm / param.T0 / (1. + z)); //jsc
    }
 
    /***** Printing out the Lyman-lines spectral distortion *****/

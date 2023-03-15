@@ -81,7 +81,7 @@ void hyrec_init()
 }
 
 void rec_build_history_camb_(const double *OmegaC, const double *OmegaB, const double *h0inp, const double *tcmb,
-                             const double *yp, const double *num_nu, double *xe, double *Tm, long int *nz, const double *pann)
+                             const double *yp, const double *num_nu, double *xe, double *Tm, long int *nz, const double *Pann)
 {
 
 
@@ -122,7 +122,7 @@ void rec_build_history_camb_(const double *OmegaC, const double *OmegaB, const d
   rec_data.cosmo->obh2 = *OmegaB * h2;
   rec_data.cosmo->ocbh2 = (*OmegaB + *OmegaC) * h2;
   rec_data.cosmo->YHe = *yp;
-  rec_data.cosmo->inj_params->pann = *pann;
+  rec_data.cosmo->inj_params->Pann = *Pann;
   rec_data.cosmo->Neff = *num_nu;                                                               /* effective number of neutrino species */
   rec_data.cosmo->fsR = rec_data.cosmo->meR = 1.;                                               /* Default: today's values */
   rec_data.cosmo->nH0 = 11.223846333047e-6 * rec_data.cosmo->obh2 * (1. - rec_data.cosmo->YHe); // number density of hudrogen today in cm-3
@@ -136,7 +136,6 @@ void rec_build_history_camb_(const double *OmegaC, const double *OmegaB, const d
   /* It seems there are no parameters related to DM annihilation in CAMB
      So, following parameters (inj_params) are meaningless here          */
   rec_data.cosmo->inj_params->Mdm = 1.;
-  //rec_data.cosmo->inj_params->pann = 0.;
   rec_data.cosmo->inj_params->decay = 0.;
   rec_data.cosmo->inj_params->DM_Channel = 2.;
 
@@ -236,10 +235,10 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
       fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'Param_Name'\n");
     exit(1);
   };
-  if (fscanf(fin, "%lg", &(param->inj_params->pann)) != 1)
+  if (fscanf(fin, "%lg", &(param->inj_params->Pann)) != 1)
   {
     if (fout != NULL)
-      fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'pann'\n");
+      fprintf(fout, "Error in rec_get_cosmoparam when reading parameter 'Pann'\n");
     exit(1);
   };
   if (fscanf(fin, "%s", Param_Name) != 1)
@@ -522,7 +521,7 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
 
   // Make sure all params are correctly passed
   /*
-  printf("Pann = %E\n", param->inj_params->pann);
+  printf("Pann = %E\n", param->inj_params->Pann);
   printf("Gamma = %E\n", param->inj_params->decay);
   printf("Mdm = %f\n", param->inj_params->Mdm);
   printf("DM_Channel = %f\n", param->inj_params->DM_Channel);

@@ -1,4 +1,4 @@
-pann:
+Pann:
 1E-25
 Gamma:
 0
@@ -50,7 +50,7 @@ do NOT change param strings above (ends with :)
 default values are given as examples below.
 All parameters must be present 
 =====================================================================
-0.       = pann = <sigma v>/Mdm      dark matter annihilation parameter, in cm^3/s/GeV
+0.       = Pann = <sigma v>/Mdm      dark matter annihilation parameter, in cm^3/s/GeV
 0.       = decay                     DM decay, in 1/s
 1.       = Mdm                       dark matter mass in GeV
 1.       = DM_Channel                Particle that DM decay/annihilate into, for full list see energy_injection.h

@@ -11,8 +11,8 @@ typedef struct
   double odmh2; /* Omega_dm h^2 */
   
   double Mdm; // DM mass in GeV
-  double pann;  /* DM annihilation parameter in the smooth background and in haloes */
-                /* Units of pann are cm^3/s/GeV */
+  double Pann;  /* DM annihilation parameter in the smooth background and in haloes */
+                /* Units of Pann are cm^3/s/GeV */
   double decay; // DM decay width in s^-1
   double Mpbh; /* primordial black hole mass, if PBH_Model==1, Mbh is in solar mass, otherwise Mbh is in gram */
   double fpbh; /* Fraction of DM made of primordial black holes */

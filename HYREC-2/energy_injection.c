@@ -66,7 +66,7 @@ double dEdVdt_ann_inj(double z, INJ_PARAMS *params)
   double Omch2, r;
   Omch2 = params->odmh2;
   // 1E9 converts GeV to eV
-  r = params->pann * square(Rhocr_C2_no_h2 * Omch2 * cube(1. + z)) * 1.0E-9;
+  r = params->Pann * square(Rhocr_C2_no_h2 * Omch2 * cube(1. + z)) * 1.0E-9;
   return r;
 }
 
@@ -144,7 +144,7 @@ double dEdVdt_deposited(double z, INJ_PARAMS *params, int dep_channel)
   {
     r_dec = dEdVdt_decay_dep(z, params, dep_channel);
   }
-  if (params->pann < Nearly_Zero)
+  if (params->Pann < Nearly_Zero)
   {
     r_ann = 0.0;
   }

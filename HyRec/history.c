@@ -131,6 +131,16 @@ void rec_build_history_camb_(const double *OmegaC, const double *OmegaB, const d
     param.Y = *yp;
     param.Nnueff = *num_nu;
     param.fsR = param.meR = 1.; /*** Default: today's values ***/
+    
+    // Set default camb params for DM&PBH
+    param.Mdm = 1.0;
+    param.Pann = 0.;
+    param.Gamma = 0.;
+    param.Mbh = 1.0E14;
+    param.fbh = 0.;
+    param.PBH_Model = 1.;
+    param.PBH_Spin = 0.;
+    param.DM_Channel = 1.;
 
     rec_set_derived_params(&param);
 
@@ -217,38 +227,60 @@ Cosmological parameters Input/Output
 
 void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
 {
-
+    char Param_Name[30];
     /* Cosmology */
-    if (fout != NULL && PROMPT == 1)
-        fprintf(fout, "Enter CMB temperature today [Kelvin]: ");
+
+    fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->T0));
-    if (fout != NULL && PROMPT == 1)
-        fprintf(fout, "Enter baryon density, omega_bh2: ");
+    fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->obh2));
-    if (fout != NULL && PROMPT == 1)
-        fprintf(fout, "Enter total matter (CDM+baryons) density, omega_mh2: ");
+    fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->omh2));
-    if (fout != NULL && PROMPT == 1)
-        fprintf(fout, "Enter curvature, omega_kh2: ");
+    fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->okh2));
-    if (fout != NULL && PROMPT == 1)
-        fprintf(fout, "Enter dark energy density, omega_deh2: ");
+    fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->odeh2));
-    if (fout != NULL && PROMPT == 1)
-        fprintf(fout, "Enter dark energy equation of state parameters, w wa: ");
+    fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg %lg", &(param->w0), &(param->wa));
-    if (fout != NULL && PROMPT == 1)
-        fprintf(fout, "Enter primordial helium mass fraction, Y: ");
+    fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->Y));
-    if (fout != NULL && PROMPT == 1)
-        fprintf(fout, "Enter effective number of neutrino species, N_nu_eff: ");
+    fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->Nnueff));
+   // DM&PBH params
+    fscanf(fin, "%s", Param_Name);
+    fscanf(fin, "%lg", &(param->Mdm));
+    fscanf(fin, "%s", Param_Name);
+    fscanf(fin, "%lg", &(param->Pann));
+    fscanf(fin, "%s", Param_Name);
+    fscanf(fin, "%lg", &(param->Gamma));
+    fscanf(fin, "%s", Param_Name);
+    fscanf(fin, "%lg", &(param->Mbh));
+    fscanf(fin, "%s", Param_Name);
+    fscanf(fin, "%lg", &(param->fbh));
+    fscanf(fin, "%s", Param_Name);
+    fscanf(fin, "%lg", &(param->PBH_Model));
+    fscanf(fin, "%s", Param_Name);
+    fscanf(fin, "%lg", &(param->PBH_Spin));
+    fscanf(fin, "%s", Param_Name);
+    fscanf(fin, "%lg", &(param->DM_Channel));
+    
+    /*
+    printf("Tcmb = %f\n", param->T0);
+    printf("obh2 = %f\n", param->obh2);
+    printf("omh2 = %f\n", param->omh2);
+    printf("okh2 = %f\n", param->okh2);
+    printf("odeh2 = %f\n", param->odeh2);
+    printf("w0 = %f\n", param->w0);
+    printf("wa = %f\n", param->wa);
+    printf("YHe = %f\n", param->Y);
+    printf("Neff = %f\n", param->Nnueff);
+    */
 
     /****** Added May 2012: explicit dependence on fine-structure constant and electron mass ******/
     /** fsR = alpha_fs(rec) / alpha_fs(today), meR = me(rec) / me(today) **/
 
-    param->fsR = param->meR = 1.; /*** Default: today's values ***/
-
+    param->fsR = param->meR = 1.0; /*** Default: today's values ***/
+    
     /**** UNCOMMENT IF WANT TO USE DIFFERENT VALUES OF alpha_fs OR me *****/
 
     /* if (fout!=NULL && PROMPT==1) fprintf(fout, "Enter ratio of fine structure constant at last scattering to today's value, alpha(rec)/alpha(now): "); */
@@ -267,7 +299,7 @@ Matter temperature -- 1st order steady state, from Hirata 2008.
 The input and output temperatures are in KELVIN.
 ******************************************************************************************/
 
-double rec_Tmss(double xe, double Tr, double H, double fHe, double fsR, double meR)
+double rec_Tmss(double xe, double Tr, double H, double fHe, double fsR, double meR, REC_COSMOPARAMS *param)
 {
     return (Tr / (1. + H / (fsR * fsR / meR / meR / meR * 4.91466895548409e-22) / Tr / Tr / Tr / Tr * (1. + xe + fHe) / xe));
     /* Coefficient = 8 sigma_T a_r / (3 m_e c) */
@@ -279,9 +311,12 @@ Matter temperature evolution derivative. Input and output temperatures are in KE
 Added May 2012: when Tm = Tr, return -Tr (needed by CLASS)
 ******************************************************************************************/
 
-double rec_dTmdlna(double xe, double Tm, double Tr, double H, double fHe, double fsR, double meR)
+double rec_dTmdlna(double xe, double Tm, double Tr, double H, double fHe, double fsR, double meR, REC_COSMOPARAMS *param)
 {
-    return (Tr / Tm - 1. < 1e-10 ? -Tr : -2. * Tm + fsR * fsR / meR / meR / meR * 4.91466895548409e-22 * Tr * Tr * Tr * Tr * xe / (1. + xe + fHe) * (Tr - Tm) / H);
+    double Q_adia, Q_compt, Q_dm, z;
+    Q_adia = -2. * Tm;
+    Q_compt = fsR * fsR / meR / meR / meR * 4.91466895548409e-22 * Tr * Tr * Tr * Tr * xe / (1. + xe + fHe) * (Tr - Tm) / H;
+    return (Tr / Tm - 1. < 1e-10 ? -Tr : Q_adia + Q_compt);
     /* Coefficient = 8 sigma_T a_r / (3 m_e c) */
     /* Here Tr, Tm are the actual (not rescaled) temperatures */
 }
@@ -496,7 +531,7 @@ void rec_get_xe_next2_HTm(int func_select, REC_COSMOPARAMS *param, double z_in, 
     dxedlna = rec_dxHIIdlna(model, xe_in, xe_in, nH, H, TM, TR, rate_table, twog_params,
                             Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, param->zH0, iz - param->izH0, z_in, param->fsR, param->meR);
 
-    dTmdlna = rec_dTmdlna(xe_in, Tm_in, TR / kBoltz, H, param->fHe, param->fsR, param->meR);
+    dTmdlna = rec_dTmdlna(xe_in, Tm_in, TR / kBoltz, H, param->fHe, param->fsR, param->meR, param);
 
     *xe_out = xe_in + DLNA * (1.25 * dxedlna - 0.25 * (*dxedlna_prev2));
     *Tm_out = Tm_in + DLNA * (1.25 * dTmdlna - 0.25 * (*dTmdlna_prev2));
@@ -515,6 +550,7 @@ Added May 2012: The radiation field was added as an input so it can be extracted
 void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_PARAMS *twog_params,
                        double *xe_output, double *Tm_output, double **Dfnu_hist, double *Dfminus_Ly_hist[3])
 {
+    // jsc
 
     long iz;
     double z, dxHIIdlna_prev, dxHIIdlna_prev2, dTmdlna_prev, dTmdlna_prev2, dxHeIIdlna_prev, dxHeIIdlna_prev2;
@@ -560,7 +596,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         xH1s = rec_saha_xH1s(xHeII, param->nH0, param->T0, z, param->fsR, param->meR);
         xe_output[iz] = (1. - xH1s) + xHeII;
-        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR);
+        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, param);
     }
 
     /******** H II -> I and He II -> I simultaneous recombination (rarely needed but just in case)
@@ -579,7 +615,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
                           Dfnu_hist, &dxHIIdlna_prev, &dxHeIIdlna_prev, &dxHIIdlna_prev2, &dxHeIIdlna_prev2, &post_saha);
         xe_output[iz] = (1. - xH1s) + xHeII;
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
-        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR);
+        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, param);
     }
 
     /******** H recombination. Helium assumed entirely neutral.
@@ -591,7 +627,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         rec_get_xe_next1_H(param, z, xe_output[iz - 1], Tm_output[iz - 1], xe_output + iz, rate_table, iz - 1, twog_params,
                            Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, &dxHIIdlna_prev, &dxHIIdlna_prev2, &post_saha);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
-        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR);
+        Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, param);
     }
 
     /******** Evolve xe and Tm simultaneously until the lower bounds of integration tables are reached.

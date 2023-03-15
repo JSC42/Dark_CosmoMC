@@ -30,12 +30,46 @@ typedef struct
       long izH0;  /* index when H recombination starts to be considered */
       double zH0; /* Redshift at which H recombination starts (zH0 = z[izH0]) */
       long nzrt;  /* number of redshift steps while radiative transfer is computed */
+
+      /*-------- Dark Matter and PBH params --------*/
+      double Mdm;   // DM mass in GeV
+      double Pann;  /* DM annihilation parameter in the smooth background and in haloes */
+                    /* Units of pann are cm^3/s/GeV */
+      double Gamma; // DM decay width in s^-1
+      double Mbh;  /* primordial black hole mass, if PBH_Model==1, Mbh is in solar mass, otherwise Mbh is in gram */
+      double fbh;  /* Fraction of DM made of primordial black holes */
+
+      double PBH_Model;  /* Chose PBH energy injection model
+                         1 - Accretion
+                         2 - Hawking Radiation, with hadronisation emissions, detailed in arxiv 2108.13256
+                         3 - Hawking Radiation, with NO hadronisation emissions, detailed in arxiv 2108.13256
+                         4 - Hawking Radiation accounting only for electron+positron+gamma emissions, applicapable for Mbh = [10^15, 10^17] g
+                         */
+      double PBH_Spin;   /* Reduced Kerr spin of PBH, see arxiv 2108.13256 for definition
+                         Currently only applicable to Hawking radiation for following values: [0 0.25 0.5 0.75 0.999 0.9999]
+                         will automatically find closest matching spin if entered value os not among above list
+                         */
+      double DM_Channel; /* DM decay/annihilation channel
+                     1 - Photon
+                     2 - Electron
+                     3 - Higgs
+                     4 - Muon
+                     5 - Tau
+                     6 - Q
+                     7 - Charm
+                     8 - Bottom
+                     9 - Top
+                     10 - W
+                     11 - Z
+                     12 - Gluon
+                     */
+
 } REC_COSMOPARAMS;
 
 void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param);
 double rec_HubbleConstant(REC_COSMOPARAMS *param, double z);
-double rec_Tmss(double xe, double Tr, double H, double fHe, double fsR, double meR);
-double rec_dTmdlna(double xe, double Tm, double Tr, double H, double fHe, double fsR, double meR);
+double rec_Tmss(double xe, double Tr, double H, double fHe, double fsR, double meR, REC_COSMOPARAMS *param);
+double rec_dTmdlna(double xe, double Tm, double Tr, double H, double fHe, double fsR, double meR, REC_COSMOPARAMS *param);
 void rec_get_xe_next1_He(REC_COSMOPARAMS *param, double z_in, double *xHeII,
                          double *dxHeIIdlna_prev, double *dxHeIIdlna_prev2, int *post_saha);
 double rec_xH1s_postSaha(REC_COSMOPARAMS *param, unsigned iz_out, double z_out, double xHeII_out,

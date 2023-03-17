@@ -104,7 +104,7 @@
     
     P%Recomb%DM_Channel = CMB%DM_Channel
     P%Recomb%Mdm = 10**(CMB%Mdm)
-    P%Recomb%Pann = CMB%Pann * 1E-28
+    P%Recomb%Pann = CMB%Pann * 1E-27
     P%Recomb%Gamma = CMB%Gamma * 1E-26
     P%Recomb%PBH_Model = CMB%PBH_Model
     P%Recomb%PBH_Distribution = CMB%PBH_Distribution

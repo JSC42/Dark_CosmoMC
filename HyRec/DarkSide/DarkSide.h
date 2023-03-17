@@ -1,6 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+// DM/PBH Deposition efficiency interpolation module
+
+// include these files if compiled independently
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <math.h>
 #include "Tables.h"
 
 int Sign(double x)
@@ -23,6 +26,7 @@ int Sign(double x)
   return result;
 }
 
+/*
 int Same_Sign(double x, double y)
 {
   int sx, sy, r;
@@ -38,6 +42,7 @@ int Same_Sign(double x, double y)
   }
   return r;
 }
+*/
 
 int Find_Index_1D(double *Tab, double x, int nx)
 {

@@ -88,6 +88,7 @@ double rec_TLA_dxHIIdlna(double xe, double xHII, double nH, double H, double TM,
 {
 
    double RLya, alphaB_TM, alphaB_TR, four_betaB, C, s, Dxe2, DalphaB;
+   double DM_Term, dEdVdt_HIon, dEdVdt_LyA, HIon, LyA;
 
    rescale_T(&TM, fsR, meR);
    rescale_T(&TR, fsR, meR);
@@ -102,8 +103,15 @@ double rec_TLA_dxHIIdlna(double xe, double xHII, double nH, double H, double TM,
    s = SAHA_FACT(fsR, meR) * TR * sqrt(TR) * exp(-EI / TR) / nH;
    Dxe2 = xe * xHII - s * (1. - xHII); /* xe xp - xe xp[Saha eq with 1s] -- gives more compact expressions */
    DalphaB = alphaB_TM - alphaB_TR;
+   
+   // ---- DM module ----
+   dEdVdt_HIon = DarkArray[0];
+   dEdVdt_LyA = DarkArray[1];
+   HIon = dEdVdt_HIon/nH/EI;
+   LyA = dEdVdt_LyA/nH/E21;
+   DM_Term = (HIon + (1. - C) * LyA) / H;
 
-   return -nH * (s * (1. - xHII) * DalphaB + Dxe2 * alphaB_TM) * C / H;
+   return -nH * (s * (1. - xHII) * DalphaB + Dxe2 * alphaB_TM) * C / H + DM_Term;
 }
 
 /**********************************************************************************************
@@ -242,8 +250,9 @@ double rec_HMLA_dxHIIdlna(double xe, double xHII, double nH, double H, double TM
 {
 
    double Alpha[2], DAlpha[2], Beta[2], R2p2s, RLya;
-   double Gamma_2s, Gamma_2p, C2s, C2p, s, Dxe2;
-   double ratio;
+   double Gamma_2s, Gamma_2p, C2s, C2p, s, Dxe2, ratio;
+   double DM_Term, dEdVdt_HIon, dEdVdt_LyA, HIon, LyA;
+
 
    ratio = TM / TR;
    rescale_T(&TR, fsR, meR);
@@ -264,7 +273,15 @@ double rec_HMLA_dxHIIdlna(double xe, double xHII, double nH, double H, double TM
    s = SAHA_FACT(fsR, meR) * TR * sqrt(TR) * exp(-EI / TR) / nH;
    Dxe2 = xe * xHII - s * (1. - xHII); /* xe^2 - xe^2[Saha eq with 1s] -- gives more compact expressions */
 
-   return -nH / H * ((s * (1. - xHII) * DAlpha[0] + Alpha[0] * Dxe2) * C2s + (s * (1. - xHII) * DAlpha[1] + Alpha[1] * Dxe2) * C2p);
+   // ---- DM module ----
+   dEdVdt_HIon = DarkArray[0];
+   dEdVdt_LyA = DarkArray[1];
+   HIon = dEdVdt_HIon/nH/EI;
+   LyA = dEdVdt_LyA/nH/E21;
+   DM_Term = (HIon + (0.25 * (1. - C2s) + 0.75 * (1. - C2p)) * LyA) / H;
+
+   return -nH / H * ((s * (1. - xHII) * DAlpha[0] + Alpha[0] * Dxe2) * C2s + (s * (1. - xHII) * DAlpha[1] + Alpha[1] * Dxe2) * C2p) + DM_Term;
+
 }
 
 /*********************************************************************************************

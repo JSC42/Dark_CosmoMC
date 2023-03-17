@@ -31,25 +31,8 @@ typedef struct
       double zH0; /* Redshift at which H recombination starts (zH0 = z[izH0]) */
       long nzrt;  /* number of redshift steps while radiative transfer is computed */
 
-      /*-------- Dark Matter and PBH params --------*/
+      /*-------- Dark Matter params --------*/
       double odmh2;
-      double Mdm;   // DM mass in GeV
-      double Pann;  /* DM annihilation parameter in the smooth background and in haloes */
-                    /* Units of pann are cm^3/s/GeV */
-      double Gamma; // DM decay width in s^-1
-      double Mbh;  /* primordial black hole mass, if PBH_Model==1, Mbh is in solar mass, otherwise Mbh is in gram */
-      double fbh;  /* Fraction of DM made of primordial black holes */
-
-      double PBH_Model;  /* Chose PBH energy injection model
-                         1 - Accretion
-                         2 - Hawking Radiation, with hadronisation emissions, detailed in arxiv 2108.13256
-                         3 - Hawking Radiation, with NO hadronisation emissions, detailed in arxiv 2108.13256
-                         4 - Hawking Radiation accounting only for electron+positron+gamma emissions, applicapable for Mbh = [10^15, 10^17] g
-                         */
-      double PBH_Spin;   /* Reduced Kerr spin of PBH, see arxiv 2108.13256 for definition
-                         Currently only applicable to Hawking radiation for following values: [0 0.25 0.5 0.75 0.999 0.9999]
-                         will automatically find closest matching spin if entered value os not among above list
-                         */
       double DM_Channel; /* DM decay/annihilation channel
                      1 - Photon
                      2 - Electron
@@ -64,6 +47,41 @@ typedef struct
                      11 - Z
                      12 - Gluon
                      */
+
+      double Mdm;   // DM mass in GeV
+      double Pann;  /* DM annihilation parameter in the smooth background and in haloes */
+                    /* Units of pann are cm^3/s/GeV */
+      double Gamma; // DM decay width in s^-1
+      
+      /*-------- Primordial Black Hole params --------*/
+      double PBH_Model;  /* Chose PBH energy injection model
+                         1 - Accretion
+                         2 - Hawking Radiation, with hadronisation emissions, detailed in arxiv 2108.13256
+                         3 - Hawking Radiation, with NO hadronisation emissions, detailed in arxiv 2108.13256
+                         4 - Hawking Radiation accounting only for electron+positron+gamma emissions, applicapable for Mbh = [10^15, 10^17] g
+                         */
+      double PBH_Distribution; /* PBH distribution model, see 2108.13256
+                               1 - Monochromatic
+                               2 - Log-normal
+                               3 - Power-law
+                               4 - Critical collapse
+                               */
+      double Mbh;  /* PBH mass, unit: msun if PBH_Model==1, otherwise grams
+                   definition of Mbh varies according to the choice of PBH_Distribution:
+                   PBH_Distribution == 1: Mbh
+                   PBH_Distribution == 2: Mc
+                   PBH_Distribution == 3: Mmin
+                   PBH_Distribution == 4: Mc
+                   */
+
+      double fbh;  /* Fraction of DM made of primordial black holes */
+      double PBH_Lognormal_Sigma; /*Log-normal distribution width*/
+      double PBH_PWL_Mmax; /*Mmax for power-law distribution, unit is msun if PBH_Model==1, otherwise gram*/
+      double PBH_PWL_Gamma; /*Power-law index for power-law distribution*/
+      double PBH_Spin;   /* Reduced Kerr spin of PBH, see arxiv 2108.13256 for definition
+                         Currently only applicable to Hawking radiation for following values: [0 0.25 0.5 0.75 0.999 0.9999]
+                         will automatically find closest matching spin if entered value os not among above list
+                         */
 
 } REC_COSMOPARAMS;
 

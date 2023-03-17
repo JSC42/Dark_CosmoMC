@@ -1,7 +1,7 @@
 Pann:
-1E-25
-Gamma:
 0
+Gamma:
+1E-25
 Mdm:
 1
 DM_Channel:
@@ -17,7 +17,7 @@ fbh:
 hubble:
 0.6735837
 Tcmb:
-2.7255
+2.728
 Omega_B:
 0.0494142797907188
 Omega_M:

@@ -91,7 +91,7 @@ December 2014:
 double rec_TLA_dxHIIdlna(REC_COSMOPARAMS *cosmo, double xe, double xHII, double nH, double H, double TM, double TR, double Fudge)
 {
 
-  double RLya, alphaB_TM, alphaB_TR, four_betaB, C, s, Dxe2, DalphaB;
+  double RLya, alphaB_TM, alphaB_TR, four_betaB, C, s, Dxe2, DalphaB, DM_Term;
   double fsR = cosmo->fsR, meR = cosmo->meR;
 
   rescale_T(&TM, fsR, meR);
@@ -108,7 +108,9 @@ double rec_TLA_dxHIIdlna(REC_COSMOPARAMS *cosmo, double xe, double xHII, double 
   Dxe2 = xe * xHII - s * (1. - xHII); /* xe xp - xe xp[Saha eq with 1s] -- gives more compact expressions */
   DalphaB = alphaB_TM - alphaB_TR;
 
-  return -nH * (s * (1. - xHII) * DalphaB + Dxe2 * alphaB_TM) * C / H + (cosmo->inj_params->ion + (1. - C) * cosmo->inj_params->exclya) / H;
+  DM_Term = (cosmo->inj_params->ion + (1. - C) * cosmo->inj_params->exclya) / H;
+
+  return -nH * (s * (1. - xHII) * DalphaB + Dxe2 * alphaB_TM) * C / H + DM_Term;
 }
 
 /**********************************************************************************************
@@ -466,7 +468,7 @@ double rec_swift_hyrec_dxHIIdlna(HYREC_DATA *data, double xe, double xHII, doubl
   double fsR = cosmo->fsR, meR = cosmo->meR;
   double Alpha[2], DAlpha[2], Beta[2], R2p2s, RLya;
   double DK_K_fid = 0., DK_K, fitted_RLya;
-  double C_2s, C_2p, gamma_2s, gamma_2p, s, Dxe2;
+  double C_2s, C_2p, gamma_2s, gamma_2p, s, Dxe2, DM_Term;
   static double diff[3];
   unsigned i;
   double ratio;
@@ -518,7 +520,8 @@ double rec_swift_hyrec_dxHIIdlna(HYREC_DATA *data, double xe, double xHII, doubl
     strcat(data->error_message, sub_message);
     return 0.;
   }
-  return -nH / H * ((s * (1. - xHII) * DAlpha[0] + Alpha[0] * Dxe2) * C_2s + (s * (1. - xHII) * DAlpha[1] + Alpha[1] * Dxe2) * C_2p) + (cosmo->inj_params->ion + (0.25 * (1. - C_2s) + 0.75 * (1. - C_2p)) * cosmo->inj_params->exclya) / H;
+  DM_Term = (cosmo->inj_params->ion + (0.25 * (1. - C_2s) + 0.75 * (1. - C_2p)) * cosmo->inj_params->exclya) / H;
+  return -nH / H * ((s * (1. - xHII) * DAlpha[0] + Alpha[0] * Dxe2) * C_2s + (s * (1. - xHII) * DAlpha[1] + Alpha[1] * Dxe2) * C_2p) + DM_Term;
 }
 
 /************************************************************************************************
@@ -545,7 +548,7 @@ double rec_HMLA_dxHIIdlna(HYREC_DATA *data, double xe, double xHII, double nH, d
   double fsR = cosmo->fsR, meR = cosmo->meR;
 
   double Alpha[2], DAlpha[2], Beta[2], R2p2s, RLya;
-  double Gamma_2s, Gamma_2p, C2s, C2p, s, Dxe2;
+  double Gamma_2s, Gamma_2p, C2s, C2p, s, Dxe2, DM_Term;
   double ratio;
   char sub_message[128];
   if (*error == 1)
@@ -573,7 +576,8 @@ double rec_HMLA_dxHIIdlna(HYREC_DATA *data, double xe, double xHII, double nH, d
 
   s = SAHA_FACT(fsR, meR) * TR * sqrt(TR) * exp(-EI / TR) / nH;
   Dxe2 = xe * xHII - s * (1. - xHII); /* xe^2 - xe^2[Saha eq with 1s] -- gives more compact expressions */
-  return -nH / H * ((s * (1. - xHII) * DAlpha[0] + Alpha[0] * Dxe2) * C2s + (s * (1. - xHII) * DAlpha[1] + Alpha[1] * Dxe2) * C2p) + (cosmo->inj_params->ion + (0.25 * (1. - C2s) + 0.75 * (1. - C2p)) * cosmo->inj_params->exclya) / H;
+  DM_Term = (cosmo->inj_params->ion + (0.25 * (1. - C2s) + 0.75 * (1. - C2p)) * cosmo->inj_params->exclya) / H;
+  return -nH / H * ((s * (1. - xHII) * DAlpha[0] + Alpha[0] * Dxe2) * C2s + (s * (1. - xHII) * DAlpha[1] + Alpha[1] * Dxe2) * C2p) + DM_Term;
 }
 
 /********************************************************************************************************

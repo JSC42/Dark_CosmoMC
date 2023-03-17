@@ -429,6 +429,20 @@
         write(*,'("Om_K                 = ",f9.6)') CP%omegak
         write(*,'("Om_m (1-Om_K-Om_L)   = ",f9.6)') 1-CP%omegak-CP%omegav
         write(*,'("100 theta (CosmoMC)  = ",f9.6)') 100*CosmomcTheta()
+        ! -- DM Params --
+        write(*,'("DM_Channel           = ",f9.6)') CP%Recomb%DM_Channel
+        write(*,'("Mdm                  = ",E9.4)') CP%Recomb%Mdm
+        write(*,'("Pann                 = ",E9.4)') CP%Recomb%Pann
+        write(*,'("Gamma                = ",E9.4)') CP%Recomb%Gamma
+        write(*,'("PBH_Model            = ",f9.6)') CP%Recomb%PBH_Model
+        write(*,'("PBH_Distribution     = ",f9.6)') CP%Recomb%PBH_Distribution
+        write(*,'("Mbh                  = ",E9.4)') CP%Recomb%Mbh
+        write(*,'("fbh                  = ",E9.4)') CP%Recomb%fbh
+        write(*,'("PBH_Lognormal_Sigma  = ",f9.6)') CP%Recomb%PBH_Lognormal_Sigma
+        write(*,'("PBH_PWL_Mmax         = ",E9.4)') CP%Recomb%PBH_PWL_Mmax
+        write(*,'("PBH_PWL_Gamma        = ",f9.6)') CP%Recomb%PBH_PWL_Gamma
+        write(*,'("PBH_Spin             = ",f9.6)') CP%Recomb%PBH_Spin
+        
         if (CP%Num_Nu_Massive > 0) then
             write(*,'("N_eff (total)        = ",f9.6)') nu_massless_degeneracy + &
                 sum(CP%Nu_mass_degeneracies(1:CP%Nu_mass_eigenstates))

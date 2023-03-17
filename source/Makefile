@@ -74,7 +74,7 @@ MPIF90C ?= mpif90
 
 
 #use "make RECOMBINATION=cosmorec" to build with CosmoRec rather than RECFAST default
-RECOMBINATION ?=recfast
+RECOMBINATION ?=hyrec
 
 EXTDATA=
 

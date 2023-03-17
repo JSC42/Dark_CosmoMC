@@ -30,8 +30,8 @@
 #include "helium.h"
 #include "hydrogen.h"
 #include "history.h"
-#include "DarkSide/DarkSide.h"
-#include "Energy_Injection.h"
+#include "Interpolate_EFF.h"
+#include "DarkSide.h"
 
 /*****************************************************************************
 Setting derived cosmological parameters needed for recombination calculation

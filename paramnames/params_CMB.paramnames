@@ -16,7 +16,7 @@ Alensf        A^f_L     #amplitude of smoothing power from fiducial models
 fdm           \epsilon_0 f_d    #CosmoRec dark matter annihilation parameter, 0910.3663
 DM_Channel    DM\ Channel
 Mdm           \log_{10} M_{\chi}
-Pann          10^{28} \times Pann
+Pann          10^{28} Pann
 Gamma         \Gamma_{\chi} (10^{-25} {\mathrm{s}^{-1}})
 PBH_Model     PBH\ Model
 PBH_Distribution PBH\ Distribution

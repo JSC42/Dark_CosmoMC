@@ -1,0 +1,10 @@
+binned=F
+cl_hat_file=PICO.dat
+cl_hat_includes_noise=F
+cl_lmax=3000
+cl_lmin=2
+cl_noise_file =PICO_Noise.dat
+dataset_format=CMBLike2
+fields_use=T E
+fullsky_exact_fksy=0.7
+like_approx=exact

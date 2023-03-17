@@ -83,7 +83,7 @@
     call Names%AddDerivedRange('H0', this%H0_min, this%H0_max)
     this%num_derived = Names%num_derived
     !set number of hard parameters, number of initial power spectrum parameters
-    call this%SetTheoryParameterNumbers(16,last_power_index)
+    call this%SetTheoryParameterNumbers(28,last_power_index)
 
     end subroutine TP_Init
 
@@ -322,6 +322,19 @@
         CMB%omdmh2 = CMB%omch2+ CMB%omnuh2
         CMB%nufrac=CMB%omnuh2/CMB%omdmh2
 
+        CMB%DM_Channel = Params(17)
+        CMB%Mdm = Params(18)
+        CMB%Pann = Params(19)
+        CMB%Gamma = Params(20)
+        CMB%PBH_Model = Params(21)
+        CMB%PBH_Distribution = Params(22)
+        CMB%Mbh = Params(23)
+        CMB%fbh = Params(24)
+        CMB%PBH_Lognormal_Sigma = Params(25)
+        CMB%PBH_PWL_Mmax = Params(26)
+        CMB%PBH_PWL_Gamma = Params(27)
+        CMB%PBH_Spin = Params(28)
+        
         if (CosmoSettings%bbn_consistency) then
             CMB%YHe = BBN_YHe%Value(CMB%ombh2,CMB%nnu - standard_neutrino_neff,error)
         else

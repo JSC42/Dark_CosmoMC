@@ -99,6 +99,23 @@
     wa_ppf = CMB%wa
     ALens = CMB%ALens
     ALens_Fiducial = CMB%ALensf
+
+    ! Passing DM Params from CosmoMC to camb
+    
+    P%Recomb%DM_Channel = CMB%DM_Channel
+    P%Recomb%Mdm = 10**(CMB%Mdm)
+    P%Recomb%Pann = CMB%Pann * 1E-28
+    P%Recomb%Gamma = CMB%Gamma * 1E-26
+    P%Recomb%PBH_Model = CMB%PBH_Model
+    P%Recomb%PBH_Distribution = CMB%PBH_Distribution
+    P%Recomb%Mbh = CMB%Mbh
+    P%Recomb%fbh = CMB%fbh
+    P%Recomb%PBH_Lognormal_Sigma = CMB%PBH_Lognormal_Sigma
+    P%Recomb%PBH_PWL_Mmax = CMB%PBH_PWL_Mmax
+    P%Recomb%PBH_PWL_Gamma = CMB%PBH_PWL_Gamma
+    P%Recomb%PBH_Spin = CMB%PBH_Spin
+
+
     P%InitialConditionVector(initial_iso_CDM) = &
         sign(sqrt(abs(CMB%iso_cdm_correlated) /(1-abs(CMB%iso_cdm_correlated))),CMB%iso_cdm_correlated)
     P%Num_Nu_Massive = 0

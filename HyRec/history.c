@@ -32,6 +32,7 @@
 #include "history.h"
 #include "Interpolate_EFF.h"
 #include "DarkSide.h"
+#define Xe_max 1.163410401856
 
 /*****************************************************************************
 Setting derived cosmological parameters needed for recombination calculation
@@ -122,7 +123,7 @@ void hyrec_init()
 
 void rec_build_history_camb_(const double *OmegaC, const double *OmegaB, const double *OmegaN,
                              const double *Omegav, const double *h0inp, const double *tcmb, const double *yp, const double *num_nu,
-                             const double *DM_Channel,const double *Mdm, const double *Pann, const double *Gamma, const double *PBH_Model,
+                             const double *DM_Channel, const double *Mdm, const double *Pann, const double *Gamma, const double *PBH_Model,
                              const double *PBH_Distribution, const double *Mbh, const double *fbh, const double *PBH_Lognormal_Sigma,
                              const double *PBH_PWL_Mmax, const double *PBH_PWL_Gamma, const double *PBH_Spin)
 {
@@ -153,7 +154,7 @@ void rec_build_history_camb_(const double *OmegaC, const double *OmegaB, const d
     param.PBH_PWL_Mmax = *PBH_PWL_Mmax;
     param.PBH_PWL_Gamma = *PBH_PWL_Gamma;
     param.PBH_Spin = *PBH_Spin;
-    
+
     // Set default camb params for DM&PBH
     param.odmh2 = param.omh2 - param.obh2;
 
@@ -243,7 +244,7 @@ Cosmological parameters Input/Output
 void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
 {
     char Param_Name[30];
-    
+
     /*-------- Dark Matter params --------*/
     fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%s", Param_Name);
@@ -275,7 +276,7 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
     fscanf(fin, "%lg", &(param->PBH_Spin));
 
     /*-------- Cosmological params --------*/
-    
+
     fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->T0));
@@ -308,7 +309,7 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
     printf("PBH_PWL_Mmax = %E\n", param->PBH_PWL_Mmax);
     printf("PBH_PWL_Gamma = %f\n", param->PBH_PWL_Gamma);
     printf("PBH_Spin = %f\n", param->PBH_Spin);
-    
+
     printf("Tcmb = %f\n", param->T0);
     printf("obh2 = %f\n", param->obh2);
     printf("omh2 = %f\n", param->omh2);
@@ -349,7 +350,7 @@ double rec_Tmss(double xe, double Tr, double H, double fHe, double fsR, double m
     dEdVdt_Heat = DarkArray[2];
     nH = DarkArray[3];
     coeff_inv = H / (fsR * fsR / cube(meR) * 4.91466895548409e-22) / pow(Tr, 4.0) * (1. + xe + fHe) / xe;
-    coeff = 1.0/coeff_inv;
+    coeff = 1.0 / coeff_inv;
     DM_Term = dEdVdt_Heat / kBoltz / (1.5 * nH * (1. + xe + fHe)) / H / (1. + coeff);
 
     // return Tr / (1. + H / (fsR * fsR / cube(meR) * 4.91466895548409e-22) / pow(Tr, 4.0) * (1. + xe + fHe) / xe);
@@ -370,13 +371,13 @@ double rec_dTmdlna(double xe, double Tm, double Tr, double H, double fHe, double
     double Q_adia, Q_compt, Q_dm, z, nH, dEdVdt_Heat;
     Q_adia = -2. * Tm;
     Q_compt = fsR * fsR / meR / meR / meR * 4.91466895548409e-22 * Tr * Tr * Tr * Tr * xe / (1. + xe + fHe) * (Tr - Tm) / H;
-    
+
     dEdVdt_Heat = DarkArray[2];
     nH = DarkArray[3];
     Q_dm = dEdVdt_Heat / kBoltz / (1.5 * nH * (1. + xe + fHe)) / H;
-    
+
     // return (Tr / Tm - 1. < 1e-10 ? -Tr : Q_adia + Q_compt + Q_dm);
-    return  Q_adia + Q_compt + Q_dm;
+    return Q_adia + Q_compt + Q_dm;
     /* Here Tr, Tm are the actual (not rescaled) temperatures */
 }
 
@@ -619,7 +620,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
     // Dark Matter related quantities, MUST be of the form:
     // DarkArray = [dEdVdt_HIon, dEdVdt_LyA, dEdVdt_Heat, .... ]
 
-    double DarkArray[20] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,19, 20};
+    double DarkArray[20] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
 
     Dfminus_hist = create_2D_array(NVIRT, param->nzrt);
 
@@ -639,6 +640,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         xe_output[iz] = rec_xesaha_HeII_III(param->nH0, param->T0, param->fHe, z, &Delta_xe, param->fsR, param->meR);
         Tm_output[iz] = param->T0 * (1. + z);
         Check_Error(xe_output[iz], Tm_output[iz]);
+        xe_output[iz] = fmin(xe_output[iz], Xe_max);
         if (debug_mode)
         {
             printf("Stage_1: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -668,6 +670,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         xe_output[iz] = (1. - xH1s) + xHeII;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
         Check_Error(xe_output[iz], Tm_output[iz]);
+        xe_output[iz] = fmin(xe_output[iz], Xe_max);
         if (debug_mode)
         {
             printf("Stage_2: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -693,6 +696,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
         Check_Error(xe_output[iz], Tm_output[iz]);
+        xe_output[iz] = fmin(xe_output[iz], Xe_max);
         if (debug_mode)
         {
             printf("Stage_3: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -711,6 +715,8 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
         Check_Error(xe_output[iz], Tm_output[iz]);
+        xe_output[iz] = fmin(xe_output[iz], Xe_max);
+
         if (debug_mode)
         {
             printf("Stage_4: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -733,6 +739,8 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
                              &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Check_Error(xe_output[iz], Tm_output[iz]);
+        xe_output[iz] = fmin(xe_output[iz], Xe_max);
+
         if (debug_mode)
         {
             printf("Stage_5: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -753,6 +761,8 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
                              &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Check_Error(xe_output[iz], Tm_output[iz]);
+        xe_output[iz] = fmin(xe_output[iz], Xe_max);
+
         if (debug_mode)
         {
             printf("Stage_6: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);

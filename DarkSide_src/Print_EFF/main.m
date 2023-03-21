@@ -24,6 +24,16 @@ Input = 'EFF/Redshift_1.txt';
 Tab_Name = 'Redshift_Axis';
 Printer(Input, Tab_Name)
 
+% Printf LCDM Xe and Tm templates
+Print_Templates
+
+Input = 'EFF/Xe_Template.txt';
+Tab_Name = 'LCDM_Xe_Template';
+Printer(Input, Tab_Name)
+
+Input = 'EFF/Tm_Template.txt';
+Tab_Name = 'LCDM_Tm_Template';
+Printer(Input, Tab_Name)
 
 % -- Kerr PBH Temperature
 

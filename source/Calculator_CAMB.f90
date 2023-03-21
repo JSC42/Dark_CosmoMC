@@ -108,8 +108,8 @@
     P%Recomb%Gamma = CMB%Gamma * 1E-26
     P%Recomb%PBH_Model = CMB%PBH_Model
     P%Recomb%PBH_Distribution = CMB%PBH_Distribution
-    P%Recomb%Mbh = CMB%Mbh
-    P%Recomb%fbh = CMB%fbh
+    P%Recomb%Mbh = 10**(CMB%Mbh)
+    P%Recomb%fbh = 10**(CMB%fbh)
     P%Recomb%PBH_Lognormal_Sigma = CMB%PBH_Lognormal_Sigma
     P%Recomb%PBH_PWL_Mmax = CMB%PBH_PWL_Mmax
     P%Recomb%PBH_PWL_Gamma = CMB%PBH_PWL_Gamma

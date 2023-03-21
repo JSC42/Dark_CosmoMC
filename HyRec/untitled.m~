@@ -1,0 +1,23 @@
+cd /Users/cangtao/IHEPBox/Projects/GitHub/Dark_CosmoMC/HyRec
+clear
+
+id = 2
+LineWidth=2
+PlotSize=20
+
+clc
+
+%d=load('tmp.dat');
+d=load('tmp_out.dat');
+zp=d(:,1) + 1;
+x=d(:,id);
+
+clf
+loglog(zp,x,'k','LineWidth',LineWidth);hold on
+xlabel('$z$','Interpreter','latex','FontSize',PlotSize,'FontName','Times');
+ylabel('$y$','Interpreter','latex','FontSize',PlotSize,'FontName','Times');
+set(gca,'FontSize',PlotSize,'Fontname','Times');
+axis([-inf inf -inf inf])
+
+a=2.474E-5;
+b=1.879

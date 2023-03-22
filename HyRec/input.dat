@@ -13,9 +13,9 @@ PBH_Model
 PBH_Distribution
 1
 Mbh
-1E5
+1
 fbh
-1E-5
+20
 PBH_Lognormal_Sigma
 1
 PBH_PWL_Mmax

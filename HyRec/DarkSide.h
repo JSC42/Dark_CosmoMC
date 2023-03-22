@@ -26,48 +26,62 @@ void Validate_Inputs(REC_COSMOPARAMS *params)
     1. Particle Channel
     2. PBH Spin
     3. PBH Model: Currently only support [1 2 3]
-    4. PBH Crretion mass range
+    4. PBH Acrretion mass range
+    to do:
+    1. PBH mass range for Hawking
+    2. DM mass range for SM and massless channels
     */
     int Particle_Channel, PBH_Model, PBH_Distribution;
     Particle_Channel = Convert_to_Int(params->DM_Channel);
     PBH_Model = Convert_to_Int(params->PBH_Model);
     PBH_Distribution = Convert_to_Int(params->PBH_Distribution);
 
+    // -------- PBH --------
+    if (params->fbh > Nearly_Zero)
+    {
+        if ((PBH_Model < 1) || (PBH_Model > 3))
+        {
+            printf("Error from Validate_Inputs@HyRec: Wrong choice of PBH_Model\n");
+            exit(1);
+        }
+
+        if (fabs(params->PBH_PWL_Gamma) < 0.001)
+        {
+            printf("Error: PBH Power-Law index cannot be 0.\n");
+            exit(1);
+        }
+        if (PBH_Distribution == 3)
+        {
+            if ((params->Mbh) > (params->PBH_PWL_Mmax))
+            {
+                printf("Error: Mmin > Mmax in power-law.\n");
+                exit(1);
+            }
+        }
+
+        if (PBH_Model == 1)
+        {
+            // Mass range
+            if ((params->Mbh < PBH_Accretion_Mass_Axis[0]) || (params->Mbh < PBH_Accretion_Mass_Axis[PBH_Accretion_Mass_Axis_Size - 1]))
+            {
+                printf("PBH mass not in range.\n");
+                exit(1);
+            }
+        }
+        else if ((PBH_Model == 2) || (PBH_Model == 3))
+        {
+            if ((params->PBH_Spin > 0.99999) || (params->PBH_Spin < -1.0E-5))
+            {
+                printf("Error from Validate_Inputs@HyRec: wrong PBH_Spin.\n");
+                exit(1);
+            }
+        }
+    }
+
     if ((Particle_Channel < 1) || (Particle_Channel > 12))
     {
         printf("Error from Validate_Inputs@HyRec: Unknown particle channel selected\n");
         exit(1);
-    }
-    if ((params->PBH_Spin > 0.99999) || (params->PBH_Spin < -1.0E-5))
-    {
-        printf("Error from Validate_Inputs@HyRec: wrong PBH_Spin.\n");
-        exit(1);
-    }
-    if ((PBH_Model < 1) || (PBH_Model > 3))
-    {
-        printf("Error from Validate_Inputs@HyRec: Wrong choice of PBH_Model\n");
-        exit(1);
-    }
-    if (fabs(params->PBH_PWL_Gamma) < 0.001)
-    {
-        printf("Error: PBH Power-Law index cannot be 0.\n");
-        exit(1);
-    }
-    if (PBH_Distribution == 3)
-    {
-        if ((params->Mbh) > (params->PBH_PWL_Mmax))
-        {
-            printf("Error: Mmin > Mmax in power-law.\n");
-            exit(1);
-        }
-    }
-    if ((PBH_Model == 1) && (params->fbh > Nearly_Zero))
-    {
-        if ((params->Mbh < PBH_Accretion_Mass_Axis[0]) || (params->Mbh < PBH_Accretion_Mass_Axis[PBH_Accretion_Mass_Axis_Size - 1]))
-        {
-            printf("PBH mass not in range.\n");
-            exit(1);
-        }
     }
 }
 
@@ -369,7 +383,7 @@ void Update_DarkArray(double z, REC_COSMOPARAMS *params, double *DarkArray)
     DarkArray[3] = nH;
 }
 
-void Check_Error(double *xe_output, double *Tm_output, double z, int iz)
+void Check_Error(double *xe_output, double *Tm_output, double z, int iz, REC_COSMOPARAMS *params)
 {
     double dx, dT;
 
@@ -396,12 +410,14 @@ void Check_Error(double *xe_output, double *Tm_output, double z, int iz)
     // Check for inifnity and NaN in Xe and T
     if (isfinite(xe_output[iz]) == 0)
     {
-        printf("Error from Check_Error@HyRec: xe is NaN or infinite\n");
+        printf("Error from Check_Error@HyRec: xe is NaN or infinite, debug info:\n");
+        printf("mbh = %E, fbh = %E, z = %f, xe = %E, T = %E\n", params->Mbh, params->fbh, z, xe_output[iz], Tm_output[iz]);
         exit(1);
     }
     if (isfinite(Tm_output[iz]) == 0)
     {
-        printf("Error from Check_Error@HyRec: T is NaN or infinite\n");
+        printf("Error from Check_Error@HyRec: T is NaN or infinite, debug info:\n");
+        printf("mbh = %E, fbh = %E, z = %f, xe = %E, T = %E\n", params->Mbh, params->fbh, z, xe_output[iz], Tm_output[iz]);
         exit(1);
     }
 }

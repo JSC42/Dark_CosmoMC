@@ -1,5 +1,6 @@
 % Print out ALL DM/PBH EFF tables
 cd /Users/cangtao/IHEPBox/Projects/GitHub/Dark_CosmoMC/DarkSide_src/Print_EFF
+clear
 
 EFF_File = '../../HyRec/EFF_Tables.h';
 

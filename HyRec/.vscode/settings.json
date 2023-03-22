@@ -1,5 +1,7 @@
 {
   "files.associations": {
-    "random": "c"
+    "random": "c",
+    "filesystem": "c",
+    "__hash_table": "cpp"
   }
 }

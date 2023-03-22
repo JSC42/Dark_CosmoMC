@@ -12,6 +12,7 @@ main reference : 2108.13256
 */
 #define PBH_Integration_Size 100
 #define debug_mode 0
+#define Xe_max_CosmoMC 0.1
 // Only include this after definning Rhocr_C2_no_h2 otherwise there will be redefinition error
 #include "Accreting_PBH.h"
 

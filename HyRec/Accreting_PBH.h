@@ -174,3 +174,49 @@ void Print_mdot(double m)
     printf("%E  %E\n", z, r);
   }
 }
+
+void Print_Luminosity_Array()
+{
+  /* Print luminosity array for matlab
+  needed for deposition efficiency computation
+  */
+  // set array size
+  int nm = 4000;
+  double m1 = 1, m2 = 1E6, vm[4000];
+  int zid, mid;
+  double z, m, r;
+  FILE *OutputFile, *M_Axis_File;
+  remove("../DarkSide_src/Accreting_PBH/data/Luminosity_Table.txt");
+  remove("../DarkSide_src/Accreting_PBH/data/Mbh_Axis.txt");
+  OutputFile = fopen("../DarkSide_src/Accreting_PBH/data/Luminosity_Table.txt", "a");
+  M_Axis_File = fopen("../DarkSide_src/Accreting_PBH/data/Mbh_Axis.txt", "a");
+  Fill_Linear_Array(m1, m2, vm, nm, 1);
+  for (zid = 0; zid < Redshift_Size; zid++)
+  {
+    for (mid = 0; mid < nm; mid++)
+    {
+      z = Redshift_Axis[zid] - 1;
+      m = vm[mid];
+      r = PBH_Accretion_Luminisoty(m, z);
+      fprintf(OutputFile, "%E ", r);
+    }
+    fprintf(OutputFile, "\n");
+  }
+  for (mid = 0; mid < nm; mid++)
+  {
+    fprintf(M_Axis_File, "%E\n", vm[mid]);
+  }
+  fclose(OutputFile);
+  fclose(M_Axis_File);
+}
+
+void print_luminosity()
+{
+  // printf luminosity for checks with matlab interpolation module (Interp_2D.m)
+  // Typical relative error: 1/10^6 for nm=4000
+  double m,z,r;
+  scanf("%lf",&m);
+  scanf("%lf",&z);
+  r = PBH_Accretion_Luminisoty(m,z)*Q_SI;
+  printf("%E\n",r);
+}

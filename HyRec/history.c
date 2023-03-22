@@ -639,8 +639,8 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         xe_output[iz] = rec_xesaha_HeII_III(param->nH0, param->T0, param->fHe, z, &Delta_xe, param->fsR, param->meR);
         Tm_output[iz] = param->T0 * (1. + z);
-        Check_Error(xe_output[iz], Tm_output[iz]);
         xe_output[iz] = fmin(xe_output[iz], Xe_max);
+        Check_Error(xe_output[iz], Tm_output[iz]);
         if (debug_mode)
         {
             printf("Stage_1: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -669,8 +669,8 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         xH1s = rec_saha_xH1s(xHeII, param->nH0, param->T0, z, param->fsR, param->meR);
         xe_output[iz] = (1. - xH1s) + xHeII;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
-        Check_Error(xe_output[iz], Tm_output[iz]);
         xe_output[iz] = fmin(xe_output[iz], Xe_max);
+        Check_Error(xe_output[iz], Tm_output[iz]);
         if (debug_mode)
         {
             printf("Stage_2: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -695,8 +695,8 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         xe_output[iz] = (1. - xH1s) + xHeII;
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
-        Check_Error(xe_output[iz], Tm_output[iz]);
         xe_output[iz] = fmin(xe_output[iz], Xe_max);
+        Check_Error(xe_output[iz], Tm_output[iz]);
         if (debug_mode)
         {
             printf("Stage_3: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -714,8 +714,8 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
                            Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, &dxHIIdlna_prev, &dxHIIdlna_prev2, &post_saha, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
-        Check_Error(xe_output[iz], Tm_output[iz]);
         xe_output[iz] = fmin(xe_output[iz], Xe_max);
+        Check_Error(xe_output[iz], Tm_output[iz]);
 
         if (debug_mode)
         {
@@ -738,8 +738,8 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
                              rate_table, iz - 1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist,
                              &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
-        Check_Error(xe_output[iz], Tm_output[iz]);
         xe_output[iz] = fmin(xe_output[iz], Xe_max);
+        Check_Error(xe_output[iz], Tm_output[iz]);
 
         if (debug_mode)
         {
@@ -760,8 +760,8 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
                              rate_table, iz - 1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist,
                              &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
-        Check_Error(xe_output[iz], Tm_output[iz]);
         xe_output[iz] = fmin(xe_output[iz], Xe_max);
+        Check_Error(xe_output[iz], Tm_output[iz]);
 
         if (debug_mode)
         {

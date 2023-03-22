@@ -26,6 +26,7 @@ void Validate_Inputs(REC_COSMOPARAMS *params)
     1. Particle Channel
     2. PBH Spin
     3. PBH Model: Currently only support [1 2 3]
+    4. PBH Crretion mass range
     */
     int Particle_Channel, PBH_Model, PBH_Distribution;
     Particle_Channel = Convert_to_Int(params->DM_Channel);
@@ -57,6 +58,14 @@ void Validate_Inputs(REC_COSMOPARAMS *params)
         if ((params->Mbh) > (params->PBH_PWL_Mmax))
         {
             printf("Error: Mmin > Mmax in power-law.\n");
+            exit(1);
+        }
+    }
+    if ((PBH_Model == 1) && (params->fbh > Nearly_Zero))
+    {
+        if ((params->Mbh < PBH_Accretion_Mass_Axis[0]) || (params->Mbh < PBH_Accretion_Mass_Axis[PBH_Accretion_Mass_Axis_Size - 1]))
+        {
+            printf("PBH mass not in range.\n");
             exit(1);
         }
     }

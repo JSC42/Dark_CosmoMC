@@ -12,7 +12,11 @@ main reference : 2108.13256
 */
 #define PBH_Integration_Size 100
 #define debug_mode 0
+#define Xe_max 1.163410401856
+#define Use_CosmoMC_Cutoff 1
 #define Xe_max_CosmoMC 0.1
+#define Tm_max_CosmoMC 1E6
+
 // Only include this after definning Rhocr_C2_no_h2 otherwise there will be redefinition error
 #include "Accreting_PBH.h"
 
@@ -62,26 +66,16 @@ void Validate_Inputs(REC_COSMOPARAMS *params)
 
 double dEdVdt_decay_inj(double z, REC_COSMOPARAMS *params)
 {
-    double Gamma, Omch2, r;
-    Gamma = params->Gamma;
-    Omch2 = params->odmh2;
-    if (Gamma > 0)
-    {
-        r = Gamma * Omch2 * pow(1 + z, 3.0) * Rhocr_C2_no_h2;
-    }
-    else
-    {
-        r = 0.0;
-    }
+    double r;
+    r = params->Gamma * params->odmh2 * pow(1 + z, 3.0) * Rhocr_C2_no_h2;
     return r;
 }
 
 double dEdVdt_ann_inj(double z, REC_COSMOPARAMS *params)
 {
-    double Omch2, r;
-    Omch2 = params->odmh2;
+    double r;
     // 1E9 converts GeV to eV
-    r = params->Pann * square(Rhocr_C2_no_h2 * Omch2 * cube(1. + z)) * 1.0E-9;
+    r = params->Pann * square(Rhocr_C2_no_h2 * params->odmh2 * cube(1. + z)) * 1.0E-9;
     return r;
 }
 
@@ -90,7 +84,7 @@ double dEdVdt_Hawking_inj(double z, double Mbh, REC_COSMOPARAMS *params)
     // Hawking Radiation injection, Normalised to mbh>10^17 g
     // See Eq (3.10) of arxiv 2108.13256
     double r;
-    r = (5.626976744186047e+29 / cube(Mbh) * params->fbh * params->odmh2 * cube(1. + z));
+    r = 5.626976744186047e+29 / cube(Mbh) * params->fbh * params->odmh2 * cube(1. + z);
     return r;
 }
 
@@ -109,32 +103,6 @@ double dEdVdt_Accretion_inj(double z, double Mbh, REC_COSMOPARAMS *params)
     return r;
 }
 
-double EFF_SSCK(double z, int dep_channel)
-{
-    double xe, r;
-    xe = LCDM_Xe(z);
-    if (dep_channel == 1)
-    {
-        r = (1 - xe) / 3;
-    }
-    else if (dep_channel == 3)
-    {
-        r = (1 - xe) / 3;
-    }
-    else if (dep_channel == 4)
-    {
-        r = (1 + 2 * xe) / 3;
-    }
-    else
-    {
-        printf("Wrong choice of dep_channel.\n");
-        exit(1);
-    }
-    // 1-xe might be <0
-    r = fmax(r, 0);
-    return r;
-}
-
 double dEdVdt_decay_dep(double z, REC_COSMOPARAMS *params, int dep_channel)
 {
     double inj, r, EFF, Mdm;
@@ -148,7 +116,7 @@ double dEdVdt_decay_dep(double z, REC_COSMOPARAMS *params, int dep_channel)
 
 double dEdVdt_Hawking_Mono_dep(double z, double Mbh, REC_COSMOPARAMS *params, int dep_channel)
 {
-    // Hawking Radiation monochromatic deosition rate
+    // Hawking Radiation monochromatic deposition rate
     double inj, r, EFF, Mdm;
     inj = dEdVdt_Hawking_inj(z, Mbh, params);
     EFF = Interp_EFF_Hawking(params->Mbh, z, params->PBH_Spin, params->PBH_Model, dep_channel);
@@ -160,7 +128,7 @@ double dEdVdt_Accretion_Mono_dep(double z, double Mbh, REC_COSMOPARAMS *params, 
 {
     double inj, r, EFF;
     inj = dEdVdt_Accretion_inj(z, Mbh, params);
-    EFF = EFF_SSCK(z, dep_channel);
+    EFF = Interp_EFF_Accreting_PBH(Mbh, z, dep_channel);
     r = EFF * inj;
     return r;
 }
@@ -217,8 +185,12 @@ double Integrate_PBH_dEdVdt(double z, REC_COSMOPARAMS *params, int dep_channel)
     PBH_Distribution = Convert_to_Int(params->PBH_Distribution);
     PBH_Model = Convert_to_Int(params->PBH_Model);
     sbh = params->PBH_Lognormal_Sigma;
-
-    if ((PBH_Model == 2) || (PBH_Model == 3))
+    if (PBH_Model == 1)
+    {
+        Mmin = 1.001 * PBH_Accretion_Mass_Axis[0];
+        Mmax = 0.999 * PBH_Accretion_Mass_Axis[PBH_Accretion_Mass_Axis_Size - 1];
+    }
+    else if ((PBH_Model == 2) || (PBH_Model == 3))
     {
         Tmax = 0.9999 * Kerr_PBH_Temperature_Axis[Kerr_PBH_Temperature_Size - 1];
         Tmin = 1.0001 * Kerr_PBH_Temperature_Axis[0];
@@ -259,14 +231,14 @@ double Integrate_PBH_dEdVdt(double z, REC_COSMOPARAMS *params, int dep_channel)
     for (idx = 0; idx < PBH_Integration_Size; idx++)
     {
         m = exp(x);
-        if ((PBH_Model == 2) || (PBH_Model == 3))
+        if (PBH_Model == 1)
+        {
+            f1 = dEdVdt_Accretion_Mono_dep(z, m, params, dep_channel);
+        }
+        else if ((PBH_Model == 2) || (PBH_Model == 3))
+
         {
             f1 = dEdVdt_Hawking_Mono_dep(z, m, params, dep_channel);
-        }
-        else
-        {
-            printf("Accreting PBH not ready.\n");
-            exit(1);
         }
         f2 = PBH_Mass_Function(m, params);
         f = f1 * f2 * m;
@@ -277,16 +249,25 @@ double Integrate_PBH_dEdVdt(double z, REC_COSMOPARAMS *params, int dep_channel)
     return r;
 }
 
-double dEdVdt_Hawking_dep(double z, REC_COSMOPARAMS *params, int dep_channel)
+double dEdVdt_PBH_dep(double z, REC_COSMOPARAMS *params, int dep_channel)
 {
-    // Hawking Radiation for general mass distributions
-    int PBH_Distribution;
+    // Deposition rate for ALL PBH models
+    int PBH_Distribution, PBH_Model;
     double r;
 
     PBH_Distribution = Convert_to_Int(params->PBH_Distribution);
+    PBH_Model = Convert_to_Int(params->PBH_Model);
+
     if (PBH_Distribution == 1)
     {
-        r = dEdVdt_Hawking_Mono_dep(z, params->Mbh, params, dep_channel);
+        if (PBH_Model == 1)
+        {
+            r = dEdVdt_Accretion_Mono_dep(z, params->Mbh, params, dep_channel);
+        }
+        else if ((PBH_Model == 2) || (PBH_Model == 3))
+        {
+            r = dEdVdt_Hawking_Mono_dep(z, params->Mbh, params, dep_channel);
+        }
     }
     else
     {
@@ -356,27 +337,7 @@ double dEdVdt_deposited(double z, REC_COSMOPARAMS *params, int dep_channel)
     }
     else
     {
-        if (PBH_Model == 1)
-        {
-            if (PBH_Distribution != 1)
-            {
-                printf("Module not ready for accreting PBH with extended distribution");
-                exit(1);
-            }
-            else
-            {
-                r_bh = dEdVdt_Accretion_Mono_dep(z, params->Mbh, params, dep_channel);
-            }
-        }
-        else if (PBH_Model == 2)
-        {
-            r_bh = dEdVdt_Hawking_dep(z, params, dep_channel);
-        }
-        else
-        {
-            printf("Unknown PBH Model.\n");
-            exit(1);
-        }
+        r_bh = dEdVdt_PBH_dep(z, params, dep_channel);
     }
 
     r = r_dec + r_ann + r_bh;
@@ -399,15 +360,37 @@ void Update_DarkArray(double z, REC_COSMOPARAMS *params, double *DarkArray)
     DarkArray[3] = nH;
 }
 
-void Check_Error(double xe, double T)
+void Check_Error(double *xe_output, double *Tm_output, double z, int iz)
 {
+    double dx, dT;
+
+    // A physical cut
+    xe_output[iz] = fmin(xe_output[iz], Xe_max);
+#ifdef CAMB
+    if (Use_CosmoMC_Cutoff && (iz > 3))
+    {
+        dx = xe_output[iz] - xe_output[iz - 1];
+        dT = Tm_output[iz] - Tm_output[iz - 1];
+        if (((dx > 0) || (dT > 0)) && (z < 1000))
+        {
+            /* This means energy injection is activated,
+            ensure xe and Tm is not too large,
+            values specified in Xe_max_CosmoMC and Tm_max_CosmoMC are already excluded anyway
+            */
+            // printf("Resetting xe and Tm for CosmoMC.\n");// complain
+            xe_output[iz] = fmin(xe_output[iz], Xe_max_CosmoMC);
+            Tm_output[iz] = fmin(Tm_output[iz], Tm_max_CosmoMC);
+        }
+    }
+#endif
+
     // Check for inifnity and NaN in Xe and T
-    if (isfinite(xe) == 0)
+    if (isfinite(xe_output[iz]) == 0)
     {
         printf("Error from Check_Error@HyRec: xe is NaN or infinite\n");
         exit(1);
     }
-    if (isfinite(T) == 0)
+    if (isfinite(Tm_output[iz]) == 0)
     {
         printf("Error from Check_Error@HyRec: T is NaN or infinite\n");
         exit(1);

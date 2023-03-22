@@ -33,5 +33,3 @@ loglog(zp1,t1,'--r','LineWidth',LineWidth);hold on
 xlabel('$z$','Interpreter','latex','FontSize',PlotSize,'FontName','Times');
 ylabel('$T_{\rm{m}}$','Interpreter','latex','FontSize',PlotSize,'FontName','Times');
 set(gca,'FontSize',PlotSize,'Fontname','Times');
-
-interp1(zp1, t1,20)

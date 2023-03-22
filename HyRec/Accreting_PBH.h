@@ -209,14 +209,3 @@ void Print_Luminosity_Array()
   fclose(OutputFile);
   fclose(M_Axis_File);
 }
-
-void print_luminosity()
-{
-  // printf luminosity for checks with matlab interpolation module (Interp_2D.m)
-  // Typical relative error: 1/10^6 for nm=4000
-  double m,z,r;
-  scanf("%lf",&m);
-  scanf("%lf",&z);
-  r = PBH_Accretion_Luminisoty(m,z)*Q_SI;
-  printf("%E\n",r);
-}

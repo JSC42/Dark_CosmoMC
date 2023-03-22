@@ -762,3 +762,31 @@ double Interp_EFF_Hawking(double Mbh, double z, double PBH_Spin, double PBH_Mode
   return EFF;
 }
 
+double Interp_EFF_Accreting_PBH(double m, double z, int Dep_Channel)
+{
+  /* Interpolate deposition efficiencies for accreting PBH
+  -- inputs --
+  m : PBH mass in msun
+  */
+
+  double r;
+  // Validate inputs
+  if ((Dep_Channel != 1) && (Dep_Channel != 3) && (Dep_Channel != 4))
+  {
+    printf("Error: wrong choice of deposition channels.\n");
+    exit(1);
+  }
+  if (Dep_Channel == 1)
+  {
+    r = Interp_2D(m, 1 + z, PBH_Accretion_Mass_Axis, Redshift_Axis, EFF_Accreting_PBH_Naked_HIon, PBH_Accretion_Mass_Axis_Size, Redshift_Size, 1);
+  }
+  else if (Dep_Channel == 3)
+  {
+    r = Interp_2D(m, 1 + z, PBH_Accretion_Mass_Axis, Redshift_Axis, EFF_Accreting_PBH_Naked_LyA, PBH_Accretion_Mass_Axis_Size, Redshift_Size, 1);
+  }
+  else if (Dep_Channel == 4)
+  {
+    r = Interp_2D(m, 1 + z, PBH_Accretion_Mass_Axis, Redshift_Axis, EFF_Accreting_PBH_Naked_Heat, PBH_Accretion_Mass_Axis_Size, Redshift_Size, 1);
+  }
+  return r;
+}

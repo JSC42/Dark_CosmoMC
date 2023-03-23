@@ -13,8 +13,8 @@ main reference : 2108.13256
 #define PBH_Integration_Size 100
 #define debug_mode 0
 #define Xe_max 1.163410401856
-#define Use_CosmoMC_Cutoff 1
-#define Xe_max_CosmoMC 0.1
+#define Use_CosmoMC_Cutoff 0
+#define Xe_max_CosmoMC 0.5
 #define Tm_max_CosmoMC 1E6
 
 // Only include this after definning Rhocr_C2_no_h2 otherwise there will be redefinition error
@@ -62,7 +62,7 @@ void Validate_Inputs(REC_COSMOPARAMS *params)
         if (PBH_Model == 1)
         {
             // Mass range
-            if ((params->Mbh < PBH_Accretion_Mass_Axis[0]) || (params->Mbh < PBH_Accretion_Mass_Axis[PBH_Accretion_Mass_Axis_Size - 1]))
+            if ((params->Mbh < PBH_Accretion_Mass_Axis[0]) || (params->Mbh > PBH_Accretion_Mass_Axis[PBH_Accretion_Mass_Axis_Size - 1]))
             {
                 printf("PBH mass not in range.\n");
                 exit(1);
@@ -398,6 +398,7 @@ void Check_Error(double *xe_output, double *Tm_output, double z, int iz, REC_COS
         {
             /* This means energy injection is activated,
             ensure xe and Tm is not too large,
+            this might be useful for blind MCMC
             values specified in Xe_max_CosmoMC and Tm_max_CosmoMC are already excluded anyway
             */
             // printf("Resetting xe and Tm for CosmoMC.\n");// complain

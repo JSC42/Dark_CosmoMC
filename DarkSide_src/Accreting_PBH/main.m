@@ -13,7 +13,7 @@ dlm = (lm2 - lm1)/(nm-1);
 lm = lm1:dlm:lm2;
 M_Axis = 10.^lm;
 
-% Calculate EFF
+% ---- Calculate EFF ----
 if reload
     tic
     for mid = 1:nm
@@ -32,12 +32,12 @@ if reload
         status = mid/nm
     end
     toc
-    save ./data/EFF.mat EFF
+    save ./data/EFF.mat EFF M_Axis zp_Axis
 else
     load ./data/EFF.mat
 end
 
-% Print Mass Axis
+% ---- Print Mass Axis ----
 Mass_Axis_File = '../Print_EFF/EFF/PBH_Accretion_Mass_Axis.txt';
 delete(Mass_Axis_File)
 FileID=fopen(Mass_Axis_File,'a');
@@ -45,3 +45,8 @@ for mid = 1:nm
     fprintf(FileID,'%E\n',M_Axis(mid));
 end
 fclose(FileID);
+
+% ---- Print EFF ----
+Print_EFF(1);
+Print_EFF(3);
+Print_EFF(4);

@@ -13,10 +13,10 @@ FileID=fopen(EFF_File,'w');
 fprintf(FileID,'#define Redshift_Size   63\n');
 fprintf(FileID,'#define Electron_Mass_eV    510998.946\n');
 fprintf(FileID,'#define Kinetic_Energy_Axis_Size	40\n');
-fprintf(FileID,'#define Mdm_Axis_Size	62\n\n');
-
-fprintf(FileID,'#define Kerr_PBH_Temperature_Size	200\n\n');
-
+fprintf(FileID,'#define Mdm_Axis_Size	62\n');
+fprintf(FileID,'#define Kerr_PBH_Temperature_Size	200\n');
+fprintf(FileID,'#define PBH_Accretion_Mass_Axis_Size	');
+fprintf(FileID,'%i\n\n',length(load('EFF/PBH_Accretion_Mass_Axis.txt')));
 fclose(FileID);
 
 % -- Redshift (1+z)
@@ -40,6 +40,12 @@ Printer(Input, Tab_Name)
 
 Input = 'EFF/PBH_Temperature_1.txt';
 Tab_Name = 'Kerr_PBH_Temperature_Axis';
+Printer(Input, Tab_Name)
+
+% -- Accreting PBH Mass
+
+Input = 'EFF/PBH_Accretion_Mass_Axis.txt';
+Tab_Name = 'PBH_Accretion_Mass_Axis';
 Printer(Input, Tab_Name)
 
 % -- Kinetic Energy
@@ -643,3 +649,19 @@ Input = 'EFF/PBH_Heat_K6B.txt';
 Tab_Name = 'EFF_Hawking_Heat_K6B';
 Printer(Input, Tab_Name)
 
+% -- Accreting PBH ----
+
+% HIon
+Input = 'EFF/PBH_Accretion_Naked_HIon.txt';
+Tab_Name = 'EFF_Accreting_PBH_Naked_HIon';
+Printer(Input, Tab_Name)
+
+% LyA
+Input = 'EFF/PBH_Accretion_Naked_LyA.txt';
+Tab_Name = 'EFF_Accreting_PBH_Naked_LyA';
+Printer(Input, Tab_Name)
+
+% Heat
+Input = 'EFF/PBH_Accretion_Naked_Heat.txt';
+Tab_Name = 'EFF_Accreting_PBH_Naked_Heat';
+Printer(Input, Tab_Name)

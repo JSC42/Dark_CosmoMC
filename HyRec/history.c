@@ -618,7 +618,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
     int post_saha;
     // Dark Matter related quantities, MUST be of the form:
     // DarkArray = [dEdVdt_HIon, dEdVdt_LyA, dEdVdt_Heat, .... ]
-
+    Validate_Inputs(param);
     double DarkArray[20] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
 
     Dfminus_hist = create_2D_array(NVIRT, param->nzrt);

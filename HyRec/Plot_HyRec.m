@@ -1,4 +1,4 @@
-cd /Users/cangtao/IHEPBox/Projects/GitHub/Dark_CosmoMC/HyRec
+cd /Users/cangtao/cloud/GitHub/Dark_CosmoMC/HyRec
 clear
 
 LineWidth=2
@@ -25,11 +25,13 @@ ylabel('$x_e$','Interpreter','latex','FontSize',PlotSize,'FontName','Times');
 set(gca,'FontSize',PlotSize,'Fontname','Times');
 LgD=legend('LCDM',...
     'PBH');
-set(LgD,'Interpreter','latex','Location','best','FontSize',PlotSize)
+set(LgD,'Interpreter','latex','Location','Northwest','FontSize',PlotSize)
+axis([12 2000 1e-4 1.4])
 
 subplot(1,2,2)
 loglog(zp0,t0,'k','LineWidth',LineWidth);hold on
 loglog(zp1,t1,'--r','LineWidth',LineWidth);hold on
 xlabel('$z$','Interpreter','latex','FontSize',PlotSize,'FontName','Times');
-ylabel('$T_{\rm{m}}$','Interpreter','latex','FontSize',PlotSize,'FontName','Times');
+ylabel('$T_{\rm{k}}$','Interpreter','latex','FontSize',PlotSize,'FontName','Times');
 set(gca,'FontSize',PlotSize,'Fontname','Times');
+axis([12 2000 1e1 1e4])

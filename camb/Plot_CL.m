@@ -1,3 +1,4 @@
+cd /Users/cangtao/cloud/GitHub/Dark_CosmoMC/camb
 % An example for pretty 1D plot
 clear
 

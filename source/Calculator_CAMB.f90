@@ -84,7 +84,7 @@
     class(CAMB_Calculator) :: this
     class(CMBParams) CMB
     type(CAMBParams)  P
-    real(dl) neff_massive_standard, mnu, m1, m3, normal_frac, lmbh, coeff_1, coeff_2, coeff_3, coeff_4
+    real(dl) neff_massive_standard, mnu, m1, m3, normal_frac, lmbh
     real(dl), external :: Newton_raphson
 
     P = this%CAMBP
@@ -111,12 +111,8 @@
 
     lmbh = (CMB%Mbh)
     P%Recomb%Mbh = 10**lmbh
-    ! fitting equation
-    coeff_1 = 0.046425527578322
-    coeff_2 = -0.343858209265228
-    coeff_3 = -1.539255682242838
-    coeff_4 = 2.716839581996596
-    P%Recomb%fbh = CMB%fbh * 10**(coeff_1*(lmbh**3)+coeff_2*(lmbh**2)+coeff_3*lmbh+coeff_4)
+    ! fitting equation from T21
+    P%Recomb%fbh = CMB%fbh * 10**(-1.9826 * lmbh + 1.87)
 
     P%Recomb%PBH_Lognormal_Sigma = CMB%PBH_Lognormal_Sigma
     P%Recomb%PBH_PWL_Mmax = CMB%PBH_PWL_Mmax

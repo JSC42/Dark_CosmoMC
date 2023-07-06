@@ -80,7 +80,7 @@ typedef struct
       double PBH_PWL_Gamma; /*Power-law index for power-law distribution*/
       double PBH_Spin;   /* Reduced Kerr spin of PBH, see arxiv 2108.13256 for definition
                          Currently only applicable to Hawking radiation for following values: [0 0.25 0.5 0.75 0.999 0.9999]
-                         will automatically find closest matching spin if entered value os not among above list
+                         will automatically find closest matching spin if entered value is not among above list
                          */
 
 } REC_COSMOPARAMS;

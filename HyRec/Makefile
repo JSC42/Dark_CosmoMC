@@ -1,4 +1,4 @@
-CC = gcc
+CC = icc
 AR = ar rvs
 CCFLAG = -O2 -DCAMB -DHYRECPATH=\"$(PWD)/\" 
 LDFLAG = -O2

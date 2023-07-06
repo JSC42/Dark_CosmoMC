@@ -242,7 +242,7 @@ Cosmological parameters Input/Output
 
 void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
 {
-    char Param_Name[30];
+    char Param_Name[100];
 
     /*-------- Dark Matter params --------*/
     fscanf(fin, "%s", Param_Name);

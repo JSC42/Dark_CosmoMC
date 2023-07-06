@@ -44,7 +44,6 @@ void Validate_Inputs(REC_COSMOPARAMS *params)
             printf("Error from Validate_Inputs@HyRec: Wrong choice of PBH_Model\n");
             exit(1);
         }
-
         if (fabs(params->PBH_PWL_Gamma) < 0.001)
         {
             printf("Error: PBH Power-Law index cannot be 0.\n");

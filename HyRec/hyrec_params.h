@@ -18,7 +18,7 @@
 
 /** Here is the switch **/
 
-#define MODEL RECFAST /* default setting: FULL */
+#define MODEL RECFAST /* default setting: FULL, use RECFAST, PEEBLES or EMLA2s2p if using DM/PBH energy injection */
 
 /*** Switch to print the spectrum (nu_Ly_alpha/2 to nu_Ly_gamma).
 If so, a smoother spectrum can be obtained by using the higher accuracy settings below (but standard parameters are fine too). ***/

@@ -1,4 +1,3 @@
-
 OUTPUT_DIR ?= Release
 
 BUILD ?= MPI
@@ -17,8 +16,8 @@ F90C     = ifort
 
 #use this if mpif90 is trying to use gfortran: MPIF90C = mpif90 -f90=ifort
 
-FFLAGS = -mkl -O3 -no-prec-div -fpp
-DEBUGFLAGS = -mkl -g -check all -check noarg_temp_created -traceback -fpp -fpe0
+FFLAGS = -qmkl -O3 -no-prec-div -fpp
+DEBUGFLAGS = -qmkl -g -check all -check noarg_temp_created -traceback -fpp -fpe0
 #add -fpe0 to check for floating point errors (think lowLike also throws these harmlessly)
 MODOUT = -module $(OUTPUT_DIR)
 LAPACKL =
@@ -70,8 +69,8 @@ endif
 
 endif
 
-MPIF90C ?= mpif90
-
+#MPIF90C ?= mpif90
+MPIF90C ?= mpiifort -fc=ifort
 
 #use "make RECOMBINATION=cosmorec" to build with CosmoRec rather than RECFAST default
 RECOMBINATION ?=hyrec

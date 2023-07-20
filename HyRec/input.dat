@@ -1,12 +1,12 @@
 ----DM_Parameters----
 DM_Channel
-2
-Mdm
 1
+Mdm
+0.1
 Pann
 0
 Gamma
-0
+1e-23
 ----PBH_Parameters----
 PBH_Model
 1

@@ -47,3 +47,5 @@ due to small changes in the CAMB version (e.g. implied optical depth changes ver
 
     <a href="http://www.sussex.ac.uk/astronomy/"><img src="https://cdn.cosmologist.info/antony/Sussex.png" height="170px"></a>
     <a href="http://erc.europa.eu/"><img src="https://erc.europa.eu/sites/default/files/content/erc_banner-vertical.jpg" height="200px"></a>
+
+Junsong Cang: To use DM/PBH injection, you will need to switch to DarkSide branch

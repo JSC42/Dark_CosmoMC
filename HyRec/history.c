@@ -153,6 +153,7 @@ void rec_build_history_camb_(const double *OmegaC, const double *OmegaB, const d
     param.PBH_PWL_Mmax = *PBH_PWL_Mmax;
     param.PBH_PWL_Gamma = *PBH_PWL_Gamma;
     param.PBH_Spin = *PBH_Spin;
+    param.Use_SSCK = 0; // Do this later for camb
 
     // Set default camb params for DM&PBH
     param.odmh2 = param.omh2 - param.obh2;
@@ -247,6 +248,8 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
     /*-------- Dark Matter params --------*/
     fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%s", Param_Name);
+    fscanf(fin, "%d", &(param->Use_SSCK));
+    fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->DM_Channel));
     fscanf(fin, "%s", Param_Name);
     fscanf(fin, "%lg", &(param->Mdm));
@@ -296,6 +299,7 @@ void rec_get_cosmoparam(FILE *fin, FILE *fout, REC_COSMOPARAMS *param)
 
     // Ensure all params are correctly entered
     /*
+    printf("Use_SSCK = %d\n", param->Use_SSCK);
     printf("DM_Channel = %f\n", param->DM_Channel);
     printf("Mdm = %f\n", param->Mdm);
     printf("Pann = %E\n", param->Pann);
@@ -613,7 +617,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
 
     long iz;
     double z, dxHIIdlna_prev, dxHIIdlna_prev2, dTmdlna_prev, dTmdlna_prev2, dxHeIIdlna_prev, dxHeIIdlna_prev2;
-    double Delta_xe, xHeII, xH1s;
+    double Delta_xe, xHeII, xH1s, f1, f3, f4;
     double **Dfminus_hist;
     int post_saha;
     // Dark Matter related quantities, MUST be of the form:
@@ -635,6 +639,25 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
     for (iz = 0; iz < param->nz && Delta_xe > 1e-8; iz++)
     {
         Update_DarkArray(z, param, DarkArray);
+        if (param->Use_SSCK == 1)
+        {
+            if (iz > 0)
+            {
+                f1 = SSCK_EFF(xe_output[iz - 1], 1);
+                f3 = SSCK_EFF(xe_output[iz - 1], 3);
+                f4 = SSCK_EFF(xe_output[iz - 1], 4);
+            }
+            else
+            {
+                f1 = 0.0;
+                f3 = 0.0;
+                f4 = 0.0;
+            }
+            DarkArray[0] = DarkArray[2] * f1;
+            DarkArray[1] = DarkArray[2] * f3;
+            DarkArray[2] = DarkArray[2] * f4;
+        }
+
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         xe_output[iz] = rec_xesaha_HeII_III(param->nH0, param->T0, param->fHe, z, &Delta_xe, param->fsR, param->meR);
         Tm_output[iz] = param->T0 * (1. + z);
@@ -662,6 +685,16 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
     for (; iz < param->izH0 + 1; iz++)
     {
         Update_DarkArray(z, param, DarkArray);
+        if (param->Use_SSCK == 1)
+        {
+            f1 = SSCK_EFF(xe_output[iz - 1], 1);
+            f3 = SSCK_EFF(xe_output[iz - 1], 3);
+            f4 = SSCK_EFF(xe_output[iz - 1], 4);
+            DarkArray[0] = DarkArray[2] * f1;
+            DarkArray[1] = DarkArray[2] * f3;
+            DarkArray[2] = DarkArray[2] * f4;
+        }
+
         rec_get_xe_next1_He(param, z, &xHeII, &dxHeIIdlna_prev, &dxHeIIdlna_prev2, &post_saha);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         xH1s = rec_saha_xH1s(xHeII, param->nH0, param->T0, z, param->fsR, param->meR);
@@ -687,13 +720,23 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
     for (; iz < param->nz && xHeII > XHEII_MIN; iz++)
     {
         Update_DarkArray(z, param, DarkArray);
+        if (param->Use_SSCK == 1)
+        {
+            f1 = SSCK_EFF(xe_output[iz - 1], 1);
+            f3 = SSCK_EFF(xe_output[iz - 1], 3);
+            f4 = SSCK_EFF(xe_output[iz - 1], 4);
+            DarkArray[0] = DarkArray[2] * f1;
+            DarkArray[1] = DarkArray[2] * f3;
+            DarkArray[2] = DarkArray[2] * f4;
+        }
+
         get_rec_next2_HHe(param, iz - 1, z, Tm_output[iz - 1], &xH1s, &xHeII, rate_table, twog_params, Dfminus_hist, Dfminus_Ly_hist,
                           Dfnu_hist, &dxHIIdlna_prev, &dxHeIIdlna_prev, &dxHIIdlna_prev2, &dxHeIIdlna_prev2, &post_saha, DarkArray);
         xe_output[iz] = (1. - xH1s) + xHeII;
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
         Check_Error(xe_output, Tm_output, z, iz, param);
-        
+
         if (debug_mode)
         {
             printf("Stage_3: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -707,12 +750,22 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
     for (; iz < param->nz && 1. - Tm_output[iz - 1] / param->T0 / (1. + z) < DLNT_MAX; iz++)
     {
         Update_DarkArray(z, param, DarkArray);
+        if (param->Use_SSCK == 1)
+        {
+            f1 = SSCK_EFF(xe_output[iz - 1], 1);
+            f3 = SSCK_EFF(xe_output[iz - 1], 3);
+            f4 = SSCK_EFF(xe_output[iz - 1], 4);
+            DarkArray[0] = DarkArray[2] * f1;
+            DarkArray[1] = DarkArray[2] * f3;
+            DarkArray[2] = DarkArray[2] * f4;
+        }
+
         rec_get_xe_next1_H(param, z, xe_output[iz - 1], Tm_output[iz - 1], xe_output + iz, rate_table, iz - 1, twog_params,
                            Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, &dxHIIdlna_prev, &dxHIIdlna_prev2, &post_saha, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0 * (1. + z), rec_HubbleConstant(param, z), param->fHe, param->fsR, param->meR, DarkArray);
         Check_Error(xe_output, Tm_output, z, iz, param);
-        
+
         if (debug_mode)
         {
             printf("Stage_4: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -730,12 +783,22 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
     for (; iz < param->nz && kBoltz * param->T0 * (1. + z) / param->fsR / param->fsR / param->meR > TR_MIN && Tm_output[iz - 1] / param->T0 / (1. + z) > TM_TR_MIN; iz++)
     {
         Update_DarkArray(z, param, DarkArray);
+        if (param->Use_SSCK == 1)
+        {
+            f1 = SSCK_EFF(xe_output[iz - 1], 1);
+            f3 = SSCK_EFF(xe_output[iz - 1], 3);
+            f4 = SSCK_EFF(xe_output[iz - 1], 4);
+            DarkArray[0] = DarkArray[2] * f1;
+            DarkArray[1] = DarkArray[2] * f3;
+            DarkArray[2] = DarkArray[2] * f4;
+        }
+
         rec_get_xe_next2_HTm(MODEL, param, z, xe_output[iz - 1], Tm_output[iz - 1], xe_output + iz, Tm_output + iz,
                              rate_table, iz - 1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist,
                              &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Check_Error(xe_output, Tm_output, z, iz, param);
-        
+
         if (debug_mode)
         {
             printf("Stage_5: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);
@@ -751,12 +814,22 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
     for (; iz < param->nz; iz++)
     {
         Update_DarkArray(z, param, DarkArray);
+        if (param->Use_SSCK == 1)
+        {
+            f1 = SSCK_EFF(xe_output[iz - 1], 1);
+            f3 = SSCK_EFF(xe_output[iz - 1], 3);
+            f4 = SSCK_EFF(xe_output[iz - 1], 4);
+            DarkArray[0] = DarkArray[2] * f1;
+            DarkArray[1] = DarkArray[2] * f3;
+            DarkArray[2] = DarkArray[2] * f4;
+        }
+
         rec_get_xe_next2_HTm(PEEBLES, param, z, xe_output[iz - 1], Tm_output[iz - 1], xe_output + iz, Tm_output + iz,
                              rate_table, iz - 1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist,
                              &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2, DarkArray);
         z = (1. + ZSTART) * exp(-DLNA * iz) - 1.;
         Check_Error(xe_output, Tm_output, z, iz, param);
-        
+
         if (debug_mode)
         {
             printf("Stage_6: z = %f, xe = %f, Tm = %f\n", z, xe_output[iz], Tm_output[iz]);

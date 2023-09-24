@@ -82,6 +82,7 @@ typedef struct
                          Currently only applicable to Hawking radiation for following values: [0 0.25 0.5 0.75 0.999 0.9999]
                          will automatically find closest matching spin if entered value is not among above list
                          */
+      int Use_SSCK;
 
 } REC_COSMOPARAMS;
 

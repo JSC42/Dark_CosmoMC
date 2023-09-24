@@ -1,12 +1,14 @@
 ----DM_Parameters----
+Use_SSCK
+0
 DM_Channel
 1
 Mdm
 0.1
 Pann
-0
+9e-24
 Gamma
-1e-23
+0
 ----PBH_Parameters----
 PBH_Model
 1

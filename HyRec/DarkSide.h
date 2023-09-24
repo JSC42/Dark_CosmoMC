@@ -27,6 +27,7 @@ void Validate_Inputs(REC_COSMOPARAMS *params)
     2. PBH Spin
     3. PBH Model: Currently only support [1 2 3]
     4. PBH Acrretion mass range
+    5. SSCK is only tunned for Pann, raise Exception if other injections are found
     to do:
     1. PBH mass range for Hawking
     2. DM mass range for SM and massless channels
@@ -81,6 +82,14 @@ void Validate_Inputs(REC_COSMOPARAMS *params)
     {
         printf("Error from Validate_Inputs@HyRec: Unknown particle channel selected\n");
         exit(1);
+    }
+    if (params->Use_SSCK == 1)
+    {
+        if ((params->fbh > Nearly_Zero) || (params->Gamma > Nearly_Zero))
+        {
+            printf("Error from Validate_Inputs@HyRec: SSCK currently only support Pann\n");
+            exit(1);
+        }
     }
 }
 
@@ -305,7 +314,14 @@ double dEdVdt_ann_dep(double z, REC_COSMOPARAMS *params, int dep_channel)
     int DM_Channel;
     DM_Channel = (int)round(params->DM_Channel);
     inj = dEdVdt_ann_inj(z, params);
-    EFF = Interp_EFF_DM_Annihilation(params->Mdm, z, dep_channel, DM_Channel);
+    if (params->Use_SSCK == 1)
+    {
+        EFF = 1.0;
+    }
+    else
+    {
+        EFF = Interp_EFF_DM_Annihilation(params->Mdm, z, dep_channel, DM_Channel);
+    }
     r = EFF * inj;
     return r;
 }
@@ -420,4 +436,24 @@ void Check_Error(double *xe_output, double *Tm_output, double z, int iz, REC_COS
         printf("mbh = %E, fbh = %E, z = %f, xe = %E, T = %E\n", params->Mbh, params->fbh, z, xe_output[iz], Tm_output[iz]);
         exit(1);
     }
+}
+
+double SSCK_EFF(double xe, int channel)
+{
+    double r;
+    if (channel == 1)
+    {
+        r = (1.0 - xe) / 3.0;
+    }
+    else if (channel == 3)
+    {
+        // r = (1.0 - xe) / 3.0;
+        // Ok we are not actually doing LyA until we fix this issue for 21cmFAST
+        r = 0.0;
+    }
+    else
+    {
+        r = (1.0 + 2.0 * xe) / 3.0;
+    }
+    return r;
 }
